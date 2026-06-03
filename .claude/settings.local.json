@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:gitlab.com)",
+      "WebFetch(domain:mozilla.github.io)",
+      "WebFetch(domain:searchfox.org)",
+      "WebFetch(domain:codeberg.org)",
+      "WebFetch(domain:ironfoxoss-org-cf159c.gitlab.io)",
+      "Bash(gh auth *)",
+      "Bash(cp ~/Documents/personal_projects/air_browser/gradle/wrapper/gradle-wrapper.jar /Users/Edoardo/Documents/personal_projects/uliveto/gradle/wrapper/)",
+      "Bash(cp ~/Documents/personal_projects/air_browser/gradlew /Users/Edoardo/Documents/personal_projects/uliveto/)",
+      "Bash(cp ~/Documents/personal_projects/air_browser/gradlew.bat /Users/Edoardo/Documents/personal_projects/uliveto/)",
+      "Bash(chmod +x /Users/Edoardo/Documents/personal_projects/uliveto/gradlew)",
+      "Read(//Users/Edoardo/.gradle/wrapper/dists/gradle-8.13-bin/**)",
+      "Read(//Users/Edoardo/.gradle/wrapper/dists/**)",
+      "Bash(curl -L \"https://github.com/googlefonts/HankenGrotesk/raw/main/fonts/ttf/HankenGrotesk-Regular.ttf\" -o /Users/Edoardo/Documents/personal_projects/uliveto/app/src/main/res/font/hanken_grotesk_regular.ttf)"
+    ]
+  }
+}

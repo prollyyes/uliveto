@@ -91,6 +91,8 @@ dependencies {
     implementation(libs.ac.feature.downloads)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.navigation.compose)
 
     debugImplementation(libs.androidx.ui.tooling)
 
