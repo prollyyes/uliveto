@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder launcher icon: olive-green circle with a WarmCream "U" -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Olive-green background circle -->
+    <path
+        android:fillColor="#6B7C45"
+        android:pathData="M54,54m-54,0a54,54 0 1,0 108,0a54,54 0 1,0 -108,0" />
+
+    <!-- WarmCream "U" letterform -->
+    <path
+        android:fillColor="#F5E6D3"
+        android:pathData="M34,28 L34,62 Q34,80 54,80 Q74,80 74,62 L74,28 L62,28 L62,62 Q62,68 54,68 Q46,68 46,62 L46,28 Z" />
+</vector>

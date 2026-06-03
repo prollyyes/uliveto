@@ -1,0 +1,46 @@
+[versions]
+agp = "8.13.2"
+kotlin = "2.1.0"
+coreKtx = "1.16.0"
+lifecycleRuntimeKtx = "2.9.0"
+activityCompose = "1.10.1"
+composeBom = "2024.12.01"
+# TODO: verify geckoview stable against https://maven.mozilla.org/maven2/org/mozilla/geckoview/
+geckoview = "128.0.20240725162350"
+# TODO: verify AC version against https://maven.mozilla.org/maven2/
+ac = "128.0.3"
+coroutines = "1.9.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+
+# GeckoView stable — update to current stable when bumping
+geckoview-stable = { group = "org.mozilla.geckoview", name = "geckoview", version.ref = "geckoview" }
+
+# Android Components (AC) — all at the same version
+ac-concept-engine = { group = "org.mozilla.components", name = "concept-engine", version.ref = "ac" }
+ac-browser-engine-gecko = { group = "org.mozilla.components", name = "browser-engine-gecko", version.ref = "ac" }
+ac-browser-state = { group = "org.mozilla.components", name = "browser-state", version.ref = "ac" }
+ac-browser-session-storage = { group = "org.mozilla.components", name = "browser-session-storage", version.ref = "ac" }
+ac-feature-session = { group = "org.mozilla.components", name = "feature-session", version.ref = "ac" }
+ac-feature-tabs = { group = "org.mozilla.components", name = "feature-tabs", version.ref = "ac" }
+ac-feature-search = { group = "org.mozilla.components", name = "feature-search", version.ref = "ac" }
+ac-feature-findinpage = { group = "org.mozilla.components", name = "feature-findinpage", version.ref = "ac" }
+ac-feature-readerview = { group = "org.mozilla.components", name = "feature-readerview", version.ref = "ac" }
+ac-feature-downloads = { group = "org.mozilla.components", name = "feature-downloads", version.ref = "ac" }
+
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

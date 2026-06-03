@@ -1,0 +1,94 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "it.uliveto.browser"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "it.uliveto.browser"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = 1
+        versionName = "0.1.0"
+
+        // Split APKs by ABI to reduce download size
+        splits {
+            abi {
+                isEnable = true
+                reset()
+                include("arm64-v8a", "armeabi-v7a")
+                isUniversalApk = false
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        jniLibs {
+            // Native libs are extracted from the APK at install time by the OS, not at runtime
+            useLegacyPackaging = false
+        }
+    }
+}
+
+// Exclude service-glean from all AC transitive dependencies
+configurations.all {
+    exclude(group = "org.mozilla.components", module = "service-glean")
+    exclude(group = "org.mozilla.telemetry", module = "glean-native")
+    exclude(group = "org.mozilla.telemetry", module = "glean")
+}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+
+    // Android Components (AC)
+    // Note: geckoview-omni is brought in transitively via browser-engine-gecko.
+    implementation(libs.ac.concept.engine)
+    implementation(libs.ac.browser.engine.gecko)
+    implementation(libs.ac.browser.state)
+    implementation(libs.ac.browser.session.storage)
+    implementation(libs.ac.feature.session)
+    implementation(libs.ac.feature.tabs)
+    implementation(libs.ac.feature.search)
+    implementation(libs.ac.feature.findinpage)
+    implementation(libs.ac.feature.readerview)
+    implementation(libs.ac.feature.downloads)
+
+    implementation(libs.kotlinx.coroutines.android)
+
+    debugImplementation(libs.androidx.ui.tooling)
+}
