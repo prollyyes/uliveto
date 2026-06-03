@@ -15,9 +15,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -45,7 +45,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import it.uliveto.browser.domain.UrlClassifier
 import it.uliveto.browser.ui.components.AddressField
 import it.uliveto.browser.ui.components.AddressFieldState
 import it.uliveto.browser.ui.components.EngineLine
@@ -159,14 +158,21 @@ fun StartScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Search pill (AddressField in Pill state)
+            // Search pill (AddressField in Pill state — expands to full-screen Expanded on tap)
+            var addressExpanded by remember { mutableStateOf(false) }
+
             AddressField(
-                state = AddressFieldState.Pill,
-                onSubmit = { input ->
-                    val url = UrlClassifier.buildNavigationUrl(input, prefs.searchEngine)
+                state = if (addressExpanded) AddressFieldState.Expanded else AddressFieldState.Pill,
+                searchEngine = prefs.searchEngine,
+                onSubmit = { url ->
                     onNavigateToBrowser(url)
+                    addressExpanded = false
                 },
-                modifier = Modifier.fillMaxWidth(),
+                onDismiss = { addressExpanded = false },
+                onPillTap = { addressExpanded = true },
+                modifier = Modifier.fillMaxWidth().then(
+                    if (addressExpanded) Modifier.fillMaxSize() else Modifier
+                ),
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -207,13 +213,13 @@ private fun BottomNavBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NavBarItem(
-            icon = { Icon(imageVector = Icons.Filled.Menu, contentDescription = "Tabs", tint = WarmCream) },
+            icon = { Icon(imageVector = Icons.Filled.Tab, contentDescription = "Tabs", tint = WarmCream) },
             label = "Tabs",
             onClick = onTabsClick,
             modifier = Modifier.weight(1f),
         )
         NavBarItem(
-            icon = { Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Bookmarks", tint = WarmCream) },
+            icon = { Icon(imageVector = Icons.Filled.Bookmarks, contentDescription = "Bookmarks", tint = WarmCream) },
             label = "Bookmarks",
             onClick = onBookmarksClick,
             modifier = Modifier.weight(1f),
