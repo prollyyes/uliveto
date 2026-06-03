@@ -56,11 +56,15 @@ fun UlivetoNavGraph(
                 onNewTab = { navController.navigate("start") },
             )
         }
-        composable("tabs") { backStackEntry ->
-            // Retrieve the URL from the previous back stack entry for the current tab display
-            val browserEntry = navController.getBackStackEntry("browser?url={url}")
-            val rawUrl = browserEntry.arguments?.getString("url") ?: ""
-            val currentUrl = if (rawUrl.isNotBlank()) Uri.decode(rawUrl) else "about:blank"
+        composable("tabs") {
+            // Safely retrieve current URL from the browser back-stack entry if present
+            val currentUrl = try {
+                val rawUrl = navController.getBackStackEntry("browser?url={url}")
+                    .arguments?.getString("url") ?: ""
+                if (rawUrl.isNotBlank()) Uri.decode(rawUrl) else "about:blank"
+            } catch (_: IllegalArgumentException) {
+                "about:blank"
+            }
             TabsScreen(
                 currentUrl = currentUrl,
                 onSelectTab = { navController.popBackStack() },

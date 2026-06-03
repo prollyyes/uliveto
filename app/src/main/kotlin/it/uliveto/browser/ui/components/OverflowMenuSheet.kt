@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ private val SheetBackground = Color(0xFFF7F7F9).copy(alpha = 0.95f)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverflowMenuSheet(
+    sheetState: SheetState,
     isReaderAvailable: Boolean,
     onNewTab: () -> Unit,
     onBookmarks: () -> Unit,
@@ -47,8 +49,6 @@ fun OverflowMenuSheet(
     onDesktopSite: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,

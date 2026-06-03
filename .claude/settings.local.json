@@ -15,7 +15,16 @@
       "Bash(chmod +x /Users/Edoardo/Documents/personal_projects/uliveto/gradlew)",
       "Read(//Users/Edoardo/.gradle/wrapper/dists/gradle-8.13-bin/**)",
       "Read(//Users/Edoardo/.gradle/wrapper/dists/**)",
-      "Bash(curl -L \"https://github.com/googlefonts/HankenGrotesk/raw/main/fonts/ttf/HankenGrotesk-Regular.ttf\" -o /Users/Edoardo/Documents/personal_projects/uliveto/app/src/main/res/font/hanken_grotesk_regular.ttf)"
+      "Bash(curl -L \"https://github.com/googlefonts/HankenGrotesk/raw/main/fonts/ttf/HankenGrotesk-Regular.ttf\" -o /Users/Edoardo/Documents/personal_projects/uliveto/app/src/main/res/font/hanken_grotesk_regular.ttf)",
+      "Bash(git *)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(jar -tf /tmp/gecko_extract/classes.jar)",
+      "Read(//private/tmp/**)",
+      "Bash(javap -classpath gecko_extract/classes.jar org.mozilla.geckoview.GeckoSessionSettings)",
+      "Bash(./gradlew clean *)",
+      "Bash(jar tf *)",
+      "Bash(jar xf *)",
+      "Bash(javap -p org/mozilla/geckoview/GeckoSessionSettings.class)"
     ]
   }
 }

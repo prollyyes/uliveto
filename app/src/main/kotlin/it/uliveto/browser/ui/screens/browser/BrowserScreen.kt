@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +49,7 @@ import org.mozilla.geckoview.GeckoView
  * Shows a [GeckoView] filling the screen with a floating [HourglassNav] + [OverflowDot]
  * anchored to the bottom. The chrome hides on scroll-down and reappears on scroll-up.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowserScreen(
     runtime: GeckoRuntime,
@@ -70,8 +73,9 @@ fun BrowserScreen(
     // Address field expansion state
     var addressExpanded by remember { mutableStateOf(false) }
 
-    // Overflow sheet state
+    // Overflow sheet state — hoisted so animation persists across show/hide cycles
     var showOverflow by remember { mutableStateOf(false) }
+    val overflowSheetState = rememberModalBottomSheetState()
 
     // Reader mode (stub false for M6)
     val isReaderAvailable by remember { mutableStateOf(false) }
@@ -214,6 +218,7 @@ fun BrowserScreen(
         // ── Overflow menu sheet ────────────────────────────────────────────────
         if (showOverflow) {
             OverflowMenuSheet(
+                sheetState = overflowSheetState,
                 isReaderAvailable = isReaderAvailable,
                 onNewTab = {
                     showOverflow = false
