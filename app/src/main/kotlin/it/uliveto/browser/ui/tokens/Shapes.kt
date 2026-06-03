@@ -60,9 +60,9 @@ object HourglassShape : Shape {
             // Bottom of center rectangle
             lineTo(w - r - waistSpan, h - pinch)
 
-            // Bottom-right waist (concave cubic from bottom-right of center to bottom of right circle)
+            // Bottom-right waist — true mirror of bottom-left (0.7, 0.3 from start)
             cubicTo(
-                w - r - waistSpan * 0.3f, h - pinch,
+                w - r - waistSpan * 0.7f, h - pinch,
                 w - r - waistSpan * 0.3f, h,
                 w - r, h,
             )
@@ -76,9 +76,9 @@ object HourglassShape : Shape {
             )
             // Now at top of right circle (w - r, 0f)
 
-            // Top-right waist (mirror of bottom-right)
+            // Top-right waist — true mirror of top-left (0.7, 0.3 from start)
             cubicTo(
-                w - r - waistSpan * 0.3f, 0f,
+                w - r - waistSpan * 0.7f, 0f,
                 w - r - waistSpan * 0.3f, pinch,
                 w - r - waistSpan, pinch,
             )

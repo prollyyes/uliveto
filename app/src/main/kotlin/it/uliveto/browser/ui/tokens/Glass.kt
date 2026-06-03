@@ -1,7 +1,6 @@
 package it.uliveto.browser.ui.tokens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -32,7 +31,6 @@ enum class GlassMaterial {
 fun Modifier.ulivetoGlass(
     material: GlassMaterial,
     shape: Shape,
-    backdropColor: Color = Color.Transparent,
 ): Modifier {
     val fillAlpha = if (material == GlassMaterial.Functional) 0.42f else 0.20f
     val fillColor = Color(0xFFF7F7F9).copy(alpha = fillAlpha)

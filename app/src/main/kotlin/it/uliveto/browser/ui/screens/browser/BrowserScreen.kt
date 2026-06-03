@@ -90,7 +90,6 @@ fun BrowserScreen(
     }
 
     // Scroll-to-hide chrome (HourglassNav + OverflowDot)
-    val chromeHeight = 44.dp
     val density = LocalDensity.current
     val chromeHeightPx = with(density) { 120.dp.toPx() }
 
