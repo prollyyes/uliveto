@@ -10,6 +10,9 @@ geckoview = "128.0.20240725162350"
 # TODO: verify AC version against https://maven.mozilla.org/maven2/
 ac = "128.0.3"
 coroutines = "1.9.0"
+junit = "4.13.2"
+androidxTestExtJunit = "1.2.1"
+androidxTestRunner = "1.6.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +42,11 @@ ac-feature-readerview = { group = "org.mozilla.components", name = "feature-read
 ac-feature-downloads = { group = "org.mozilla.components", name = "feature-downloads", version.ref = "ac" }
 
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+# Test dependencies
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -12,7 +12,9 @@ import org.mozilla.geckoview.GeckoRuntimeSettings
  * - Remote debugging disabled
  * - about:config disabled
  *
- * M2 will add experimentDelegate and globalPrivacyControl via prefs.
+ * Knobs applied in M2:
+ * - Phoenix privacy prefs bundle applied via PrefsApplier
+ * - Google Safe Browsing disabled (privacy default)
  *
  * GeckoRuntime.create() may only be called once per process; [getOrCreate] enforces that.
  */
@@ -37,6 +39,15 @@ object EngineBuilder {
             .aboutConfigEnabled(false)
             .build()
 
-        return GeckoRuntime.create(context, settings)
+        val runtime = GeckoRuntime.create(context, settings)
+
+        // Apply Phoenix prefs bundle (telemetry lockdown, privacy hardening)
+        val prefs = PrefsLoader.load(context)
+        PrefsApplier.apply(runtime, prefs)
+
+        // Privacy default: disable Safe Browsing (no outbound Google SB requests)
+        SafeBrowsingToggle.setEnabled(runtime, enabled = false)
+
+        return runtime
     }
 }

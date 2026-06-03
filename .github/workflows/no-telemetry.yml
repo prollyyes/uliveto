@@ -1,0 +1,113 @@
+name: No Telemetry Proof
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  no-telemetry:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Install mitmproxy
+        run: pip install mitmproxy
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run no-telemetry test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          profile: pixel_5
+          target: google_apis
+          avd-name: test
+          script: |
+            # Start mitmproxy capture in background
+            mkdir -p captures
+            mitmdump -w captures/capture.flow --listen-port 8080 --ssl-insecure &
+            MITM_PID=$!
+            sleep 3
+
+            # Configure emulator proxy
+            adb shell settings put global http_proxy 127.0.0.1:8080
+
+            # Install mitmproxy CA cert
+            curl -s http://mitm.it/cert/der -o /tmp/mitm.der
+            adb push /tmp/mitm.der /sdcard/mitm.der
+            adb shell am start -n com.android.settings/.Settings
+            sleep 2
+
+            # Install APK
+            adb install app/build/outputs/apk/debug/app-x86_64-debug.apk || \
+              adb install app/build/outputs/apk/debug/app-arm64-v8a-debug.apk || \
+              adb install app/build/outputs/apk/debug/*.apk
+
+            # Launch with NO URL intent
+            adb shell am start -n it.uliveto.browser/.MainActivity
+
+            # Wait 30 seconds idle (cold start window)
+            sleep 30
+
+            # Stop mitmdump
+            kill $MITM_PID || true
+            sleep 2
+
+            # Assert zero flows
+            python3 scripts/assert-no-flows.py captures/capture.flow
+
+      - name: Generate capture summary
+        if: always()
+        run: |
+          python3 -c "
+          from mitmproxy import io as mio
+          from mitmproxy.http import HTTPFlow
+          import sys
+          flows = []
+          try:
+              with open('captures/capture.flow', 'rb') as f:
+                  for flow in mio.FlowReader(f).stream():
+                      if isinstance(flow, HTTPFlow):
+                          flows.append(f'{flow.request.method} {flow.request.pretty_url}')
+          except Exception as e:
+              print(f'Error reading capture: {e}')
+              sys.exit(0)
+          print(f'Total flows: {len(flows)}')
+          for f in flows:
+              print(f'  {f}')
+          " > captures/capture-summary.txt 2>&1 || echo "No captures file" > captures/capture-summary.txt
+          cat captures/capture-summary.txt
+
+      - name: Upload capture artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: telemetry-proof
+          path: |
+            captures/capture.flow
+            captures/capture-summary.txt
+          retention-days: 90
