@@ -34,7 +34,7 @@ fun Modifier.ulivetoGlass(
     shape: Shape,
     backdropColor: Color = Color.Transparent,
 ): Modifier {
-    val fillAlpha = if (material == GlassMaterial.Functional) 0.55f else 0.20f
+    val fillAlpha = if (material == GlassMaterial.Functional) 0.42f else 0.20f
     val fillColor = Color(0xFFF7F7F9).copy(alpha = fillAlpha)
     val elevation = if (material == GlassMaterial.Functional) 8.dp else 2.dp
 

@@ -92,7 +92,7 @@ fun BrowserScreen(
     // Scroll-to-hide chrome (HourglassNav + OverflowDot)
     val chromeHeight = 44.dp
     val density = LocalDensity.current
-    val chromeHeightPx = with(density) { (chromeHeight + 16.dp).toPx() }
+    val chromeHeightPx = with(density) { 120.dp.toPx() }
 
     var chromeOffsetY by remember { mutableFloatStateOf(0f) }
 
@@ -150,7 +150,7 @@ fun BrowserScreen(
                 onAddressTap = { /* M5: address sheet */ },
                 modifier = Modifier.weight(1f),
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(11.dp))
             OverflowDot(
                 onClick = { /* M6: overflow sheet */ },
             )
