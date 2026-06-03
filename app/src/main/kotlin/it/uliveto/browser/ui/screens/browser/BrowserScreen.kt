@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -75,6 +76,11 @@ fun BrowserScreen(
     var currentUrl by remember { mutableStateOf(initialUrl) }
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
+
+    // Adaptive tint: sampled once per URL change — never per frame
+    // TODO: sample meta theme-color from browser-state (deferred to M8+)
+    @Suppress("UNUSED_VARIABLE")
+    val glassTint by remember(currentUrl) { mutableStateOf(Color(0xFFF7F7F9)) }
 
     // Address field expansion state
     var addressExpanded by remember { mutableStateOf(false) }

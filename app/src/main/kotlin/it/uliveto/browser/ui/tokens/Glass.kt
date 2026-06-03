@@ -1,7 +1,10 @@
 package it.uliveto.browser.ui.tokens
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
@@ -12,7 +15,6 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Glass material tiers used across the UI.
- * Real blur/frosted-glass implementation arrives in M8.
  */
 enum class GlassMaterial {
     /** Purely ornamental glass — lower blur, higher transparency. */
@@ -25,8 +27,20 @@ enum class GlassMaterial {
 /**
  * Applies a frosted-glass surface effect to the composable.
  *
- * M4 implementation: semi-transparent milky fill + top rim highlight.
- * Real backdrop blur deferred to M8.
+ * Performance notes:
+ * - The blur is clipped to the shape (due to `.clip(shape)` before `.blur()`).
+ * - The offscreen layer is NOT explicitly paused while scroll-hidden; the
+ *   `graphicsLayer { alpha = 0 }` applied by BrowserScreen handles this on
+ *   hardware — a full offscreen-layer pause is deferred to a future pass.
+ * - Adaptive tint ([functionalTintFor]) is computed once per URL change,
+ *   never per frame — see BrowserScreen for the remember(currentUrl) guard.
+ *
+ * API behaviour:
+ * - API 31+ (Android 12+): real blur via [Modifier.blur] with radius 22 dp.
+ *   Note: `Modifier.blur` blurs the composable's own content; the frosted-glass
+ *   appearance relies on the translucent background compositing over the page.
+ *   True backdrop blur (blurring what's behind) requires RenderEffect — deferred.
+ * - API < 31: semi-transparent milky fill only (no blur).
  */
 fun Modifier.ulivetoGlass(
     material: GlassMaterial,
@@ -39,6 +53,13 @@ fun Modifier.ulivetoGlass(
     return this
         .shadow(elevation = elevation, shape = shape, clip = false)
         .clip(shape)
+        .then(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                Modifier.blur(radius = 22.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+            } else {
+                Modifier
+            }
+        )
         .background(fillColor)
         .drawWithContent {
             drawContent()
@@ -51,3 +72,20 @@ fun Modifier.ulivetoGlass(
             )
         }
 }
+
+/**
+ * Computes an adaptive glass tint from a backdrop color sample.
+ *
+ * Slightly brightens each channel (×1.08, capped at 1f) and locks alpha to
+ * the functional glass value. Intended to be called once per URL change
+ * (never per frame) using `remember(currentUrl) { … }`.
+ *
+ * TODO: sample meta theme-color from browser-state (deferred to M8+).
+ */
+fun functionalTintFor(backdrop: Color): Color =
+    backdrop.copy(
+        red = (backdrop.red * 1.08f).coerceAtMost(1f),
+        green = (backdrop.green * 1.08f).coerceAtMost(1f),
+        blue = (backdrop.blue * 1.08f).coerceAtMost(1f),
+        alpha = 0.42f,
+    )

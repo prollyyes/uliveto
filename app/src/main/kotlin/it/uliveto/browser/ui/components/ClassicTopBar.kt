@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,6 +54,7 @@ fun ClassicTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .semantics { contentDescription = "Address: $currentUrl" }
                 .clickable(onClick = onAddressTap)
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,

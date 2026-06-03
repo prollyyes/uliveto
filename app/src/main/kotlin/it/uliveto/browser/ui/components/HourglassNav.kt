@@ -22,6 +22,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -66,7 +68,7 @@ fun HourglassNav(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = "Go back",
                 tint = if (canGoBack) CharcoalDark else CharcoalDark.copy(alpha = 0.26f),
                 modifier = Modifier.size(20.dp),
             )
@@ -77,6 +79,7 @@ fun HourglassNav(
         Row(
             modifier = Modifier
                 .weight(1f)
+                .semantics { contentDescription = "Address bar: $currentUrl" }
                 .clickable(onClick = onAddressTap),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -108,7 +111,7 @@ fun HourglassNav(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Forward",
+                contentDescription = "Go forward",
                 tint = if (canGoForward) CharcoalDark else CharcoalDark.copy(alpha = 0.26f),
                 modifier = Modifier.size(20.dp),
             )
