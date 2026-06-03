@@ -1,4 +1,4 @@
-package it.uliveto.browser
+package it.uliveto.browser.ui.screens.browser
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,9 +15,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
@@ -31,8 +30,9 @@ import org.mozilla.geckoview.GeckoView
 @Composable
 fun BrowserScreen(
     runtime: GeckoRuntime,
-    viewModel: BrowserViewModel = viewModel(),
+    vmFactory: ViewModelProvider.Factory,
 ) {
+    val viewModel: BrowserViewModel = viewModel(factory = vmFactory)
     val urlText by viewModel.urlText.collectAsState()
 
     // Create one GeckoSession per composition; re-use the same instance on recompose.
@@ -77,7 +77,7 @@ fun BrowserScreen(
         }
 
         // ── GeckoView ─────────────────────────────────────────────────────────
-        AndroidView(
+        androidx.compose.ui.viewinterop.AndroidView(
             factory = { ctx ->
                 GeckoView(ctx).apply {
                     setSession(session)

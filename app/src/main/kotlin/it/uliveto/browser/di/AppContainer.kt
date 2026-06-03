@@ -11,5 +11,5 @@ import org.mozilla.geckoview.GeckoRuntime
  */
 class AppContainer(context: Context) {
 
-    val geckoRuntime: GeckoRuntime = EngineBuilder.buildRuntime(context.applicationContext)
+    val geckoRuntime: GeckoRuntime = EngineBuilder.getOrCreate(context.applicationContext)
 }

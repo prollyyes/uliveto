@@ -1,4 +1,4 @@
-package it.uliveto.browser
+package it.uliveto.browser.ui.screens.browser
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

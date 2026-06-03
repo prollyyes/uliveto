@@ -23,7 +23,7 @@ androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 
-# GeckoView stable — update to current stable when bumping
+# Version anchor only — geckoview is pulled transitively by browser-engine-gecko
 geckoview-stable = { group = "org.mozilla.geckoview", name = "geckoview", version.ref = "geckoview" }
 
 # Android Components (AC) — all at the same version
