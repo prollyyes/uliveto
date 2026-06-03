@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import it.uliveto.browser.data.prefs.AppTheme
 import it.uliveto.browser.ui.tokens.CharcoalDark
 import it.uliveto.browser.ui.tokens.NeutralLight
 import it.uliveto.browser.ui.tokens.OliveGreen
@@ -29,22 +31,48 @@ private val TerracottaLightColorScheme = lightColorScheme(
     onSurfaceVariant = Terracotta2,
 )
 
-// Placeholder dark scheme — full dark palette arrives in a later milestone.
 private val TerracottaDarkColorScheme = darkColorScheme(
     primary = Terracotta1,
     onPrimary = WarmCream,
-    background = CharcoalDark,
+    primaryContainer = Terracotta3,
+    onPrimaryContainer = WarmCream,
+    secondary = OliveGreen,
+    onSecondary = WarmCream,
+    background = Color(0xFF1A0E08),
     onBackground = WarmCream,
-    surface = CharcoalDark,
+    surface = Color(0xFF2A1A0E),
     onSurface = WarmCream,
+    surfaceVariant = Color(0xFF2A1A0E),
+    onSurfaceVariant = Terracotta2,
+)
+
+// TODO: OLED Black — functional glass overlay should use Color(0xFF1F1F22).copy(alpha = 0.48f)
+private val TerracottaOledColorScheme = darkColorScheme(
+    primary = Terracotta1,
+    onPrimary = WarmCream,
+    primaryContainer = Terracotta3,
+    onPrimaryContainer = WarmCream,
+    secondary = OliveGreen,
+    onSecondary = WarmCream,
+    background = Color.Black,
+    onBackground = WarmCream,
+    surface = Color.Black,
+    onSurface = WarmCream,
+    surfaceVariant = Color.Black,
+    onSurfaceVariant = Terracotta2,
 )
 
 @Composable
 fun UlivetoTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    appTheme: AppTheme = AppTheme.Light,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) TerracottaDarkColorScheme else TerracottaLightColorScheme
+    val colorScheme = when (appTheme) {
+        AppTheme.Light -> TerracottaLightColorScheme
+        AppTheme.Dark -> TerracottaDarkColorScheme
+        AppTheme.OledBlack -> TerracottaOledColorScheme
+        AppTheme.FollowSystem -> if (isSystemInDarkTheme()) TerracottaDarkColorScheme else TerracottaLightColorScheme
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,

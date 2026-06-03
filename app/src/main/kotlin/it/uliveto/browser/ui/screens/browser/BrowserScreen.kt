@@ -32,8 +32,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import it.uliveto.browser.data.prefs.NavStyle
 import it.uliveto.browser.ui.components.AddressField
 import it.uliveto.browser.ui.components.AddressFieldState
+import it.uliveto.browser.ui.components.ClassicBottomBar
+import it.uliveto.browser.ui.components.ClassicTopBar
 import it.uliveto.browser.ui.components.FindInPageBar
 import it.uliveto.browser.ui.components.HourglassNav
 import it.uliveto.browser.ui.components.OverflowDot
@@ -55,6 +58,7 @@ fun BrowserScreen(
     runtime: GeckoRuntime,
     vmFactory: ViewModelProvider.Factory,
     initialUrl: String = "about:blank",
+    navStyle: NavStyle = NavStyle.Hourglass,
     onNavigateToBookmarks: () -> Unit = {},
     onNavigateToTabs: () -> Unit = {},
     onNewTab: () -> Unit = {},
@@ -158,6 +162,15 @@ fun BrowserScreen(
             modifier = Modifier.fillMaxSize(),
         )
 
+        // ── Classic top bar ───────────────────────────────────────────────────
+        if (navStyle == NavStyle.Classic) {
+            ClassicTopBar(
+                currentUrl = currentUrl,
+                onAddressTap = { addressExpanded = true },
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+        }
+
         // ── Find-in-page bar — shown above chrome when active ─────────────────
         if (showFindInPage) {
             FindInPageBar(
@@ -175,31 +188,44 @@ fun BrowserScreen(
             )
         }
 
-        // ── Bottom chrome: HourglassNav + OverflowDot ─────────────────────────
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 12.dp)
-                .graphicsLayer {
-                    translationY = animatedTranslationY
-                    alpha = chromeAlpha.coerceIn(0f, 1f)
-                },
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            HourglassNav(
-                currentUrl = currentUrl,
+        // ── Bottom chrome: Hourglass or Classic ───────────────────────────────
+        if (navStyle == NavStyle.Classic) {
+            ClassicBottomBar(
                 canGoBack = canGoBack,
                 canGoForward = canGoForward,
                 onBack = { session.goBack() },
                 onForward = { session.goForward() },
-                onAddressTap = { addressExpanded = true },
-                modifier = Modifier.weight(1f),
+                onHome = onNewTab,
+                onTabs = onNavigateToTabs,
+                onMenu = { showOverflow = true },
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
-            Spacer(modifier = Modifier.width(11.dp))
-            OverflowDot(
-                onClick = { showOverflow = true },
-            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 12.dp)
+                    .graphicsLayer {
+                        translationY = animatedTranslationY
+                        alpha = chromeAlpha.coerceIn(0f, 1f)
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HourglassNav(
+                    currentUrl = currentUrl,
+                    canGoBack = canGoBack,
+                    canGoForward = canGoForward,
+                    onBack = { session.goBack() },
+                    onForward = { session.goForward() },
+                    onAddressTap = { addressExpanded = true },
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.width(11.dp))
+                OverflowDot(
+                    onClick = { showOverflow = true },
+                )
+            }
         }
 
         // ── Expanded address overlay ───────────────────────────────────────────
