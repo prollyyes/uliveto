@@ -2,6 +2,8 @@ package it.uliveto.browser.ui.screens.start
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import it.uliveto.browser.data.prefs.AppTheme
+import it.uliveto.browser.data.prefs.NavStyle
 import it.uliveto.browser.data.prefs.UserPreferences
 import it.uliveto.browser.data.prefs.UserPrefsRepository
 import it.uliveto.browser.domain.SearchEngine
@@ -21,5 +23,17 @@ class StartViewModel(private val prefsRepository: UserPrefsRepository) : ViewMod
 
     fun setUserName(name: String) {
         viewModelScope.launch { prefsRepository.setUserName(name) }
+    }
+
+    fun setTheme(theme: AppTheme) {
+        viewModelScope.launch { prefsRepository.setTheme(theme) }
+    }
+
+    fun setNavStyle(style: NavStyle) {
+        viewModelScope.launch { prefsRepository.setNavStyle(style) }
+    }
+
+    fun setSafeBrowsingEnabled(enabled: Boolean) {
+        viewModelScope.launch { prefsRepository.setSafeBrowsingEnabled(enabled) }
     }
 }

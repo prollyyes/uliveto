@@ -3,6 +3,7 @@ package it.uliveto.browser.data.prefs
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -12,34 +13,55 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
-class UserPrefsRepository(private val context: Context) {
-
-    private val dataStore = context.dataStore
+class UserPrefsRepository(context: Context) {
+    private val dataStore = context.userPrefsDataStore
 
     val preferences: Flow<UserPreferences> = dataStore.data
         .catch { emit(emptyPreferences()) }
         .map { prefs ->
             UserPreferences(
-                searchEngine = SearchEngine.valueOf(
-                    prefs[PrefsKeys.SEARCH_ENGINE] ?: SearchEngine.DuckDuckGo.name
-                ),
-                userName = prefs[PrefsKeys.USER_NAME] ?: "",
+                searchEngine = try {
+                    SearchEngine.valueOf(prefs[Keys.SEARCH_ENGINE] ?: SearchEngine.DuckDuckGo.name)
+                } catch (_: IllegalArgumentException) {
+                    SearchEngine.DuckDuckGo
+                },
+                userName = prefs[Keys.USER_NAME] ?: "",
+                theme = try {
+                    AppTheme.valueOf(prefs[Keys.THEME] ?: AppTheme.Light.name)
+                } catch (_: IllegalArgumentException) {
+                    AppTheme.Light
+                },
+                navStyle = try {
+                    NavStyle.valueOf(prefs[Keys.NAV_STYLE] ?: NavStyle.Hourglass.name)
+                } catch (_: IllegalArgumentException) {
+                    NavStyle.Hourglass
+                },
+                safeBrowsingEnabled = prefs[Keys.SAFE_BROWSING] ?: false,
             )
         }
 
-    suspend fun setSearchEngine(engine: SearchEngine) {
-        dataStore.edit { it[PrefsKeys.SEARCH_ENGINE] = engine.name }
-    }
+    suspend fun setSearchEngine(engine: SearchEngine) =
+        dataStore.edit { it[Keys.SEARCH_ENGINE] = engine.name }
 
-    suspend fun setUserName(name: String) {
-        dataStore.edit { it[PrefsKeys.USER_NAME] = name }
-    }
+    suspend fun setUserName(name: String) =
+        dataStore.edit { it[Keys.USER_NAME] = name }
 
-    private object PrefsKeys {
+    suspend fun setTheme(theme: AppTheme) =
+        dataStore.edit { it[Keys.THEME] = theme.name }
+
+    suspend fun setNavStyle(style: NavStyle) =
+        dataStore.edit { it[Keys.NAV_STYLE] = style.name }
+
+    suspend fun setSafeBrowsingEnabled(enabled: Boolean) =
+        dataStore.edit { it[Keys.SAFE_BROWSING] = enabled }
+
+    private object Keys {
         val SEARCH_ENGINE = stringPreferencesKey("search_engine")
         val USER_NAME = stringPreferencesKey("user_name")
+        val THEME = stringPreferencesKey("theme")
+        val NAV_STYLE = stringPreferencesKey("nav_style")
+        val SAFE_BROWSING = booleanPreferencesKey("safe_browsing")
     }
 }
 
-// Extension property for DataStore instance
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
+private val Context.userPrefsDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
