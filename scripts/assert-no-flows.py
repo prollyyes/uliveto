@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Assert that a mitmproxy capture file contains zero HTTP flows.
+"""Assert that a mitmproxy capture contains zero flows of any kind.
+
+Counts all flow types (HTTP, TCP, errored TLS attempts) so that even a
+failed CONNECT handshake — which proves a connection was attempted — is
+flagged. If telemetry is truly disabled the capture will be empty.
 
 Usage: python3 assert-no-flows.py <capture.flow>
 Exit 0 if zero flows, exit 1 with offending hosts listed otherwise.
@@ -19,19 +23,21 @@ def main():
     try:
         with open(path, "rb") as fh:
             for flow in mio.FlowReader(fh).stream():
-                if isinstance(flow, HTTPFlow):
-                    flows.append(flow)
+                flows.append(flow)  # count every flow type
     except FileNotFoundError:
         print(f"Capture file not found: {path}", file=sys.stderr)
         sys.exit(1)
 
     if not flows:
-        print("Zero flows captured — telemetry proof passed.")
+        print("✅  Zero flows captured — telemetry proof passed.")
         sys.exit(0)
     else:
-        print(f"{len(flows)} flow(s) captured — telemetry proof FAILED.")
+        print(f"❌  {len(flows)} flow(s) captured — telemetry proof FAILED.")
         for flow in flows:
-            print(f"  {flow.request.method} {flow.request.pretty_url}")
+            if isinstance(flow, HTTPFlow):
+                print(f"  HTTP  {flow.request.method} {flow.request.pretty_url}")
+            else:
+                print(f"  {type(flow).__name__}  {flow}")
         sys.exit(1)
 
 
