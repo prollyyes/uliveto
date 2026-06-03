@@ -94,6 +94,11 @@ class PrefsLoaderTest {
         assertNull(result)
     }
 
+    @Test(expected = IllegalStateException::class)
+    fun `throws on unrecognized literal`() {
+        parsePrefLine("""pref("some.key", undefined);""")
+    }
+
     @Test
     fun `parses user_pref variant`() {
         val result = parsePrefLine("""user_pref("some.pref", true);""")
@@ -121,7 +126,7 @@ class PrefsLoaderTest {
             raw.startsWith("'") -> raw.removeSurrounding("'")
             raw.toIntOrNull() != null -> raw.toInt()
             raw.toLongOrNull() != null -> raw.toLong().toInt().coerceIn(Int.MIN_VALUE, Int.MAX_VALUE)
-            else -> return null
+            else -> error("Unrecognized pref value for key $key: $raw")
         }
         return key to value
     }

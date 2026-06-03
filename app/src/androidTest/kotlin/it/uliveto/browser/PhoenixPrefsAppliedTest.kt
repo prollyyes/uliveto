@@ -34,4 +34,25 @@ class PhoenixPrefsAppliedTest {
             assertTrue("Expected pref '$key' to be in phoenix bundle", prefs.containsKey(key))
         }
     }
+
+    @Test
+    fun knownTelemetryPrefsAreDisabled() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val prefs = it.uliveto.browser.engine.PrefsLoader.load(context)
+
+        val expectedFalse = listOf(
+            "toolkit.telemetry.enabled",
+            "toolkit.telemetry.unified",
+            "datareporting.healthreport.uploadEnabled",
+            "network.captive-portal-service.enabled",
+            "network.connectivity-service.enabled",
+        )
+        for (key in expectedFalse) {
+            val value = prefs[key]
+            assertTrue(
+                "Expected pref '$key' to be false, got: $value",
+                value == false || value == 0
+            )
+        }
+    }
 }
