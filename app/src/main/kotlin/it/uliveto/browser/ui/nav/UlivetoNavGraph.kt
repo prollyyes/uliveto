@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import it.uliveto.browser.data.prefs.UserPreferences
 import it.uliveto.browser.di.AppContainer
 import it.uliveto.browser.di.ViewModelFactory
 import it.uliveto.browser.ui.UlivetoTheme
@@ -32,7 +33,7 @@ fun UlivetoNavGraph(
 
     // Collect preferences at nav-graph level so theme + navStyle stay in sync app-wide
     val prefs by appContainer.userPrefsRepository.preferences.collectAsState(
-        initial = it.uliveto.browser.data.prefs.UserPreferences(),
+        initial = UserPreferences(),
     )
 
     UlivetoTheme(appTheme = prefs.theme) {

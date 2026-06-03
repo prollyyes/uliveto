@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -167,7 +169,7 @@ fun BrowserScreen(
             ClassicTopBar(
                 currentUrl = currentUrl,
                 onAddressTap = { addressExpanded = true },
-                modifier = Modifier.align(Alignment.TopCenter),
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding(),
             )
         }
 
@@ -198,7 +200,7 @@ fun BrowserScreen(
                 onHome = onNewTab,
                 onTabs = onNavigateToTabs,
                 onMenu = { showOverflow = true },
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding(),
             )
         } else {
             Row(

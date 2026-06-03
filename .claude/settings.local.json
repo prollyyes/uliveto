@@ -24,7 +24,8 @@
       "Bash(./gradlew clean *)",
       "Bash(jar tf *)",
       "Bash(jar xf *)",
-      "Bash(javap -p org/mozilla/geckoview/GeckoSessionSettings.class)"
+      "Bash(javap -p org/mozilla/geckoview/GeckoSessionSettings.class)",
+      "Bash(xargs cat -n)"
     ]
   }
 }
