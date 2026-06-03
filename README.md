@@ -1,29 +1,6 @@
 <div align="center">
 
-<svg width="128" height="128" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle -->
-  <circle cx="60" cy="60" r="60" fill="#9D4626"/>
-  <!-- Trunk -->
-  <path d="M57 95 Q55 80 56 70 Q57 60 60 55 Q63 60 64 70 Q65 80 63 95 Z" fill="#6B7C45" opacity="0.85"/>
-  <!-- Root spread -->
-  <path d="M54 95 Q50 92 46 94" stroke="#6B7C45" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-  <path d="M66 95 Q70 92 74 94" stroke="#6B7C45" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-  <!-- Main canopy -->
-  <ellipse cx="60" cy="44" rx="18" ry="14" fill="#6B7C45"/>
-  <ellipse cx="44" cy="52" rx="13" ry="10" fill="#6B7C45"/>
-  <ellipse cx="76" cy="52" rx="13" ry="10" fill="#6B7C45"/>
-  <ellipse cx="48" cy="38" rx="11" ry="9" fill="#7A8E52"/>
-  <ellipse cx="72" cy="38" rx="11" ry="9" fill="#7A8E52"/>
-  <ellipse cx="60" cy="32" rx="10" ry="8" fill="#7A8E52"/>
-  <!-- Olives -->
-  <ellipse cx="50" cy="58" rx="3" ry="4" fill="#3D4F1C"/>
-  <ellipse cx="70" cy="56" rx="3" ry="4" fill="#3D4F1C"/>
-  <ellipse cx="60" cy="53" rx="2.5" ry="3.5" fill="#3D4F1C"/>
-  <!-- Leaf highlights -->
-  <ellipse cx="54" cy="43" rx="4" ry="2.5" fill="#8A9E60" transform="rotate(-20 54 43)"/>
-  <ellipse cx="67" cy="41" rx="4" ry="2.5" fill="#8A9E60" transform="rotate(20 67 41)"/>
-  <ellipse cx="60" cy="36" rx="3.5" ry="2" fill="#8A9E60"/>
-</svg>
+<img src="images/logo.svg" width="160" alt="Uliveto logo — an olive branch" />
 
 <br>
 
