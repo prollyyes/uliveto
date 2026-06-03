@@ -55,6 +55,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.net.Uri
 import it.uliveto.browser.domain.SearchEngine
 import it.uliveto.browser.domain.UrlClassifier
 import it.uliveto.browser.ui.tokens.CharcoalDark

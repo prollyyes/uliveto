@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -66,6 +67,9 @@ fun StartScreen(
     val prefs by viewModel.preferences.collectAsState()
     var hasShownNamePrompt by rememberSaveable { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
+    var addressExpanded by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = addressExpanded) { addressExpanded = false }
 
     // Show name prompt once if name is blank; don't re-trigger on every recomposition
     LaunchedEffect(prefs.userName, hasShownNamePrompt) {
@@ -158,9 +162,6 @@ fun StartScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Search pill (AddressField in Pill state — expands to full-screen Expanded on tap)
-            var addressExpanded by remember { mutableStateOf(false) }
-
             AddressField(
                 state = if (addressExpanded) AddressFieldState.Expanded else AddressFieldState.Pill,
                 searchEngine = prefs.searchEngine,
@@ -170,9 +171,7 @@ fun StartScreen(
                 },
                 onDismiss = { addressExpanded = false },
                 onPillTap = { addressExpanded = true },
-                modifier = Modifier.fillMaxWidth().then(
-                    if (addressExpanded) Modifier.fillMaxSize() else Modifier
-                ),
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Spacer(modifier = Modifier.weight(1f))
