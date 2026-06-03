@@ -24,10 +24,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +38,8 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -63,52 +65,65 @@ fun StartScreen(
     modifier: Modifier = Modifier,
 ) {
     val prefs by viewModel.preferences.collectAsState()
+    var hasShownNamePrompt by rememberSaveable { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
 
-    // Show name prompt on first open if name is blank
-    if (prefs.userName.isBlank() && !showNameDialog) {
-        showNameDialog = true
+    // Show name prompt once if name is blank; don't re-trigger on every recomposition
+    LaunchedEffect(prefs.userName, hasShownNamePrompt) {
+        if (prefs.userName.isBlank() && !hasShownNamePrompt) {
+            showNameDialog = true
+        }
     }
 
     if (showNameDialog) {
         NamePromptDialog(
             onConfirm = { name ->
-                viewModel.setUserName(name)
+                if (name.isNotBlank()) viewModel.setUserName(name)
+                hasShownNamePrompt = true
                 showNameDialog = false
             },
-            onDismiss = { showNameDialog = false },
+            onDismiss = {
+                hasShownNamePrompt = true
+                showNameDialog = false
+            },
         )
     }
 
-    val terracottaGradient = Brush.radialGradient(
-        colors = listOf(
-            Color(0xFFB25737),
-            Color(0xFF9D4626),
-            Color(0xFF7E3415),
-        ),
-    )
+    val terracottaGradient = remember {
+        Brush.radialGradient(
+            colors = listOf(
+                Color(0xFFB25737),
+                Color(0xFF9D4626),
+                Color(0xFF7E3415),
+            ),
+        )
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(brush = terracottaGradient)
-            // 4%-opacity grain overlay drawn with Canvas — no PNG texture
+            // 4%-opacity grain overlay pre-rendered into an ImageBitmap — no PNG texture
             .drawWithCache {
+                val w = size.width.toInt().coerceAtLeast(1)
+                val h = size.height.toInt().coerceAtLeast(1)
+                val grainBitmap = ImageBitmap(w, h)
                 val rng = Random(seed = 42)
                 val paint = Paint().apply {
                     color = Color.White.copy(alpha = 0.04f)
                 }
                 val count = 4000
-                val xs = FloatArray(count) { rng.nextFloat() * size.width }
-                val ys = FloatArray(count) { rng.nextFloat() * size.height }
-                val rs = FloatArray(count) { rng.nextFloat() * 1.5f + 0.5f }
+                androidx.compose.ui.graphics.Canvas(grainBitmap).apply {
+                    for (i in 0 until count) {
+                        val x = rng.nextFloat() * w
+                        val y = rng.nextFloat() * h
+                        val r = rng.nextFloat() * 1.5f + 0.5f
+                        drawCircle(Offset(x, y), r, paint)
+                    }
+                }
                 onDrawWithContent {
                     drawContent()
-                    drawIntoCanvas { canvas ->
-                        for (i in 0 until count) {
-                            canvas.drawCircle(Offset(xs[i], ys[i]), rs[i], paint)
-                        }
-                    }
+                    drawImage(grainBitmap)
                 }
             },
     ) {

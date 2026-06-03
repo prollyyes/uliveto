@@ -31,6 +31,7 @@ import org.mozilla.geckoview.GeckoView
 fun BrowserScreen(
     runtime: GeckoRuntime,
     vmFactory: ViewModelProvider.Factory,
+    initialUrl: String = "about:blank",
 ) {
     val viewModel: BrowserViewModel = viewModel(factory = vmFactory)
     val urlText by viewModel.urlText.collectAsState()
@@ -41,7 +42,7 @@ fun BrowserScreen(
     // Open the session when composed; close it when this composable leaves the tree.
     DisposableEffect(session, runtime) {
         session.open(runtime)
-        session.loadUri("about:blank")
+        session.loadUri(initialUrl)
         onDispose {
             session.close()
         }

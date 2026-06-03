@@ -46,6 +46,7 @@ fun UlivetoNavGraph(
             BrowserScreen(
                 runtime = appContainer.geckoRuntime,
                 vmFactory = browserVmFactory,
+                initialUrl = Uri.decode(url),
             )
         }
         composable("tabs") { /* Placeholder */ }

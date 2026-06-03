@@ -14,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +41,8 @@ fun EngineLine(
     modifier: Modifier = Modifier,
 ) {
     var showSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
 
     Row(
         modifier = modifier
@@ -73,9 +77,12 @@ fun EngineLine(
     }
 
     if (showSheet) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
-            onDismissRequest = { showSheet = false },
+            onDismissRequest = {
+                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                    if (!sheetState.isVisible) showSheet = false
+                }
+            },
             sheetState = sheetState,
         ) {
             Text(
@@ -106,7 +113,9 @@ fun EngineLine(
                     ),
                     modifier = Modifier.clickable {
                         onEngineSelected(entry)
-                        showSheet = false
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) showSheet = false
+                        }
                     },
                 )
             }
