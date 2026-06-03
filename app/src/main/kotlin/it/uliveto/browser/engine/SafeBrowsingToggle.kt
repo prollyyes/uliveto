@@ -33,7 +33,7 @@ object SafeBrowsingToggle {
         if (!enabled) {
             SB_URLS.forEach { key -> prefs[key] = "" }
         }
-        Log.i(TAG, "Safe Browsing set to enabled=$enabled")
         PrefsApplier.apply(runtime, prefs)
+        Log.i(TAG, "Safe Browsing set to enabled=$enabled")
     }
 }

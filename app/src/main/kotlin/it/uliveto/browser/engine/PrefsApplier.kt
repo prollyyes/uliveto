@@ -28,7 +28,10 @@ object PrefsApplier {
             method.invoke(runtime, geckoBundle)
             Log.i(TAG, "Applied ${prefs.size} Phoenix prefs to GeckoRuntime")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to apply Phoenix prefs via reflection: ${e.message}", e)
+            throw IllegalStateException(
+                "FATAL: Phoenix prefs could not be applied to GeckoRuntime. " +
+                "Zero telemetry guarantee cannot be upheld. Aborting.", e
+            )
         }
     }
 
