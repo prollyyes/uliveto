@@ -1,23 +1,35 @@
 package it.uliveto.browser.ui.screens.browser
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import it.uliveto.browser.ui.components.HourglassNav
+import it.uliveto.browser.ui.components.OverflowDot
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
@@ -25,7 +37,8 @@ import org.mozilla.geckoview.GeckoView
 /**
  * Full-screen browser screen.
  *
- * Contains a debug URL bar (removed in M5) above a full-screen [GeckoView].
+ * Shows a [GeckoView] filling the screen with a floating [HourglassNav] + [OverflowDot]
+ * anchored to the bottom. The chrome hides on scroll-down and reappears on scroll-up.
  */
 @Composable
 fun BrowserScreen(
@@ -33,60 +46,114 @@ fun BrowserScreen(
     vmFactory: ViewModelProvider.Factory,
     initialUrl: String = "about:blank",
 ) {
+    @Suppress("UNUSED_VARIABLE")
     val viewModel: BrowserViewModel = viewModel(factory = vmFactory)
-    val urlText by viewModel.urlText.collectAsState()
 
-    // Create one GeckoSession per composition; re-use the same instance on recompose.
     val session = remember { GeckoSession() }
 
-    // Open the session when composed; close it when this composable leaves the tree.
+    // Navigation state tracked via GeckoSession.NavigationDelegate
+    var currentUrl by remember { mutableStateOf(initialUrl) }
+    var canGoBack by remember { mutableStateOf(false) }
+    var canGoForward by remember { mutableStateOf(false) }
+
+    // Captured mutable state references for use inside the delegate lambda
+    // (this@BrowserScreen label is not valid in @Composable functions)
+    val setCurrentUrl: (String) -> Unit = { currentUrl = it }
+    val setCanGoBack: (Boolean) -> Unit = { canGoBack = it }
+    val setCanGoForward: (Boolean) -> Unit = { canGoForward = it }
+
     DisposableEffect(session, runtime) {
+        session.setNavigationDelegate(object : GeckoSession.NavigationDelegate {
+            override fun onLocationChange(
+                session: GeckoSession,
+                url: String?,
+                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
+                hasUserGesture: Boolean,
+            ) {
+                setCurrentUrl(url ?: "about:blank")
+            }
+
+            override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
+                setCanGoBack(canGoBack)
+            }
+
+            override fun onCanGoForward(session: GeckoSession, canGoForward: Boolean) {
+                setCanGoForward(canGoForward)
+            }
+        })
         session.open(runtime)
         session.loadUri(initialUrl)
         onDispose {
+            session.setNavigationDelegate(null)
             session.close()
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // ── Debug URL bar (removed in M5) ─────────────────────────────────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedTextField(
-                value = urlText,
-                onValueChange = { viewModel.onUrlTextChanged(it) },
-                label = { Text("URL") },
-                singleLine = true,
-                modifier = Modifier.weight(1f),
-            )
-            Button(
-                onClick = {
-                    val url = urlText.trim().let { raw ->
-                        if (raw.startsWith("http://") || raw.startsWith("https://")) raw
-                        else "https://$raw"
-                    }
-                    session.loadUri(url)
-                },
-                modifier = Modifier.padding(start = 8.dp),
-            ) {
-                Text("Go")
+    // Scroll-to-hide chrome (HourglassNav + OverflowDot)
+    val chromeHeight = 44.dp
+    val density = LocalDensity.current
+    val chromeHeightPx = with(density) { (chromeHeight + 16.dp).toPx() }
+
+    var chromeOffsetY by remember { mutableFloatStateOf(0f) }
+
+    val scrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                chromeOffsetY = (chromeOffsetY + delta).coerceIn(-chromeHeightPx, 0f)
+                return Offset.Zero
             }
         }
+    }
 
-        // ── GeckoView ─────────────────────────────────────────────────────────
+    // Animate the chrome translation — negative chromeOffsetY means chrome should slide down
+    val animatedTranslationY by animateFloatAsState(
+        targetValue = -chromeOffsetY,
+        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
+        label = "chrome_hide",
+    )
+    val chromeAlpha = 1f + chromeOffsetY / chromeHeightPx  // 1f when visible, 0f when hidden
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollConnection),
+    ) {
+        // ── GeckoView — fills entire screen ───────────────────────────────────
         androidx.compose.ui.viewinterop.AndroidView(
             factory = { ctx ->
                 GeckoView(ctx).apply {
                     setSession(session)
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+            modifier = Modifier.fillMaxSize(),
         )
+
+        // ── Bottom chrome: HourglassNav + OverflowDot ─────────────────────────
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 12.dp)
+                .graphicsLayer {
+                    translationY = animatedTranslationY
+                    alpha = chromeAlpha.coerceIn(0f, 1f)
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            HourglassNav(
+                currentUrl = currentUrl,
+                canGoBack = canGoBack,
+                canGoForward = canGoForward,
+                onBack = { session.goBack() },
+                onForward = { session.goForward() },
+                onAddressTap = { /* M5: address sheet */ },
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            OverflowDot(
+                onClick = { /* M6: overflow sheet */ },
+            )
+        }
     }
 }
