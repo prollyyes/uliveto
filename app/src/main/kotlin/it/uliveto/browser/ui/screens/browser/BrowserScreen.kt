@@ -1,5 +1,6 @@
 package it.uliveto.browser.ui.screens.browser
 
+import android.content.Intent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -24,14 +25,20 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import it.uliveto.browser.ui.components.AddressField
+import it.uliveto.browser.ui.components.AddressFieldState
+import it.uliveto.browser.ui.components.FindInPageBar
 import it.uliveto.browser.ui.components.HourglassNav
 import it.uliveto.browser.ui.components.OverflowDot
+import it.uliveto.browser.ui.components.OverflowMenuSheet
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 
 /**
@@ -45,10 +52,14 @@ fun BrowserScreen(
     runtime: GeckoRuntime,
     vmFactory: ViewModelProvider.Factory,
     initialUrl: String = "about:blank",
+    onNavigateToBookmarks: () -> Unit = {},
+    onNavigateToTabs: () -> Unit = {},
+    onNewTab: () -> Unit = {},
 ) {
     @Suppress("UNUSED_VARIABLE")
     val viewModel: BrowserViewModel = viewModel(factory = vmFactory)
 
+    val context = LocalContext.current
     val session = remember { GeckoSession() }
 
     // Navigation state tracked via GeckoSession.NavigationDelegate
@@ -56,8 +67,23 @@ fun BrowserScreen(
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
 
+    // Address field expansion state
+    var addressExpanded by remember { mutableStateOf(false) }
+
+    // Overflow sheet state
+    var showOverflow by remember { mutableStateOf(false) }
+
+    // Reader mode (stub false for M6)
+    val isReaderAvailable by remember { mutableStateOf(false) }
+
+    // Find-in-page state
+    var showFindInPage by remember { mutableStateOf(false) }
+    var findQuery by remember { mutableStateOf("") }
+
+    // Desktop site toggle
+    var isDesktopSite by remember { mutableStateOf(false) }
+
     // Captured mutable state references for use inside the delegate lambda
-    // (this@BrowserScreen label is not valid in @Composable functions)
     val setCurrentUrl: (String) -> Unit = { currentUrl = it }
     val setCanGoBack: (Boolean) -> Unit = { canGoBack = it }
     val setCanGoForward: (Boolean) -> Unit = { canGoForward = it }
@@ -128,6 +154,23 @@ fun BrowserScreen(
             modifier = Modifier.fillMaxSize(),
         )
 
+        // ── Find-in-page bar — shown above chrome when active ─────────────────
+        if (showFindInPage) {
+            FindInPageBar(
+                query = findQuery,
+                onQueryChange = { findQuery = it },
+                onPrevious = { /* stub: GeckoView find prev */ },
+                onNext = { /* stub: GeckoView find next */ },
+                onClose = {
+                    showFindInPage = false
+                    findQuery = ""
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 12.dp, vertical = 76.dp),
+            )
+        }
+
         // ── Bottom chrome: HourglassNav + OverflowDot ─────────────────────────
         Row(
             modifier = Modifier
@@ -146,12 +189,66 @@ fun BrowserScreen(
                 canGoForward = canGoForward,
                 onBack = { session.goBack() },
                 onForward = { session.goForward() },
-                onAddressTap = { /* M5: address sheet */ },
+                onAddressTap = { addressExpanded = true },
                 modifier = Modifier.weight(1f),
             )
             Spacer(modifier = Modifier.width(11.dp))
             OverflowDot(
-                onClick = { /* M6: overflow sheet */ },
+                onClick = { showOverflow = true },
+            )
+        }
+
+        // ── Expanded address overlay ───────────────────────────────────────────
+        if (addressExpanded) {
+            AddressField(
+                state = AddressFieldState.Expanded,
+                currentUrl = currentUrl,
+                onSubmit = { url ->
+                    session.loadUri(url)
+                    addressExpanded = false
+                },
+                onDismiss = { addressExpanded = false },
+            )
+        }
+
+        // ── Overflow menu sheet ────────────────────────────────────────────────
+        if (showOverflow) {
+            OverflowMenuSheet(
+                isReaderAvailable = isReaderAvailable,
+                onNewTab = {
+                    showOverflow = false
+                    onNewTab()
+                },
+                onBookmarks = {
+                    showOverflow = false
+                    onNavigateToBookmarks()
+                },
+                onShare = {
+                    showOverflow = false
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, currentUrl)
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, null))
+                },
+                onReader = {
+                    showOverflow = false
+                    // Stub: reader mode wired in future milestone
+                },
+                onFind = {
+                    showFindInPage = true
+                    showOverflow = false
+                },
+                onDesktopSite = {
+                    showOverflow = false
+                    isDesktopSite = !isDesktopSite
+                    session.settings.setUserAgentMode(
+                        if (isDesktopSite) GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+                        else GeckoSessionSettings.USER_AGENT_MODE_MOBILE,
+                    )
+                    session.reload()
+                },
+                onDismiss = { showOverflow = false },
             )
         }
     }

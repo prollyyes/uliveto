@@ -3,15 +3,19 @@ package it.uliveto.browser.ui.nav
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import it.uliveto.browser.di.AppContainer
 import it.uliveto.browser.di.ViewModelFactory
+import it.uliveto.browser.ui.screens.bookmarks.BookmarksScreen
+import it.uliveto.browser.ui.screens.bookmarks.BookmarksViewModel
 import it.uliveto.browser.ui.screens.browser.BrowserScreen
 import it.uliveto.browser.ui.screens.browser.BrowserViewModel
 import it.uliveto.browser.ui.screens.start.StartScreen
 import it.uliveto.browser.ui.screens.start.StartViewModel
+import it.uliveto.browser.ui.screens.tabs.TabsScreen
 
 @Composable
 fun UlivetoNavGraph(
@@ -29,7 +33,7 @@ fun UlivetoNavGraph(
             val startVmFactory = ViewModelFactory {
                 StartViewModel(appContainer.userPrefsRepository)
             }
-            val startVm: StartViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = startVmFactory)
+            val startVm: StartViewModel = viewModel(factory = startVmFactory)
             StartScreen(
                 viewModel = startVm,
                 onNavigateToBrowser = { url ->
@@ -47,10 +51,35 @@ fun UlivetoNavGraph(
                 runtime = appContainer.geckoRuntime,
                 vmFactory = browserVmFactory,
                 initialUrl = Uri.decode(url),
+                onNavigateToBookmarks = { navController.navigate("bookmarks") },
+                onNavigateToTabs = { navController.navigate("tabs") },
+                onNewTab = { navController.navigate("start") },
             )
         }
-        composable("tabs") { /* Placeholder */ }
-        composable("bookmarks") { /* Placeholder */ }
+        composable("tabs") { backStackEntry ->
+            // Retrieve the URL from the previous back stack entry for the current tab display
+            val browserEntry = navController.getBackStackEntry("browser?url={url}")
+            val rawUrl = browserEntry.arguments?.getString("url") ?: ""
+            val currentUrl = if (rawUrl.isNotBlank()) Uri.decode(rawUrl) else "about:blank"
+            TabsScreen(
+                currentUrl = currentUrl,
+                onSelectTab = { navController.popBackStack() },
+                onNewTab = { navController.navigate("start") },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable("bookmarks") {
+            val bookmarksVmFactory = ViewModelFactory {
+                BookmarksViewModel(appContainer.bookmarksRepository)
+            }
+            BookmarksScreen(
+                viewModel = viewModel(factory = bookmarksVmFactory),
+                onOpenUrl = { url ->
+                    navController.navigate("browser?url=${Uri.encode(url)}")
+                },
+                onBack = { navController.popBackStack() },
+            )
+        }
         composable("settings") { /* Placeholder */ }
     }
 }
