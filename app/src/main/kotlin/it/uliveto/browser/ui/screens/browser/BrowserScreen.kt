@@ -4,21 +4,28 @@ import android.content.Intent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +73,15 @@ fun BrowserScreen(
     val viewModel: BrowserViewModel = viewModel(factory = vmFactory)
 
     val context = LocalContext.current
+    val view = LocalView.current
+
+    // Force white status bar icons so they're always legible over the gradient scrim
+    SideEffect {
+        WindowInsetsControllerCompat(
+            (view.context as android.app.Activity).window, view,
+        ).isAppearanceLightStatusBars = false
+    }
+
     val session = remember { GeckoSession() }
 
     // Navigation state tracked via GeckoSession.NavigationDelegate
@@ -85,8 +101,7 @@ fun BrowserScreen(
     var showOverflow by remember { mutableStateOf(false) }
     val overflowSheetState = rememberModalBottomSheetState()
 
-    // Reader mode (stub false for M6)
-    val isReaderAvailable by remember { mutableStateOf(false) }
+    val isReaderAvailable by remember { mutableStateOf(true) }
 
     // Find-in-page state
     var showFindInPage by remember { mutableStateOf(false) }
@@ -169,6 +184,19 @@ fun BrowserScreen(
                 }
             },
             modifier = Modifier.fillMaxSize(),
+        )
+
+        // ── Status bar gradient scrim — keeps icons legible over any page ────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .align(Alignment.TopCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Black.copy(alpha = 0.45f), Color.Transparent),
+                    )
+                ),
         )
 
         // ── Classic top bar ───────────────────────────────────────────────────

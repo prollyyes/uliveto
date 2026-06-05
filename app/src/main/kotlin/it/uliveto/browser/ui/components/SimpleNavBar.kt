@@ -1,10 +1,10 @@
 package it.uliveto.browser.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -30,17 +31,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.uliveto.browser.ui.tokens.CharcoalDark
-import it.uliveto.browser.ui.tokens.GlassMaterial
 import it.uliveto.browser.ui.tokens.HankenGrotesk
+import it.uliveto.browser.ui.tokens.NeutralLight
 import it.uliveto.browser.ui.tokens.PillShape
-import it.uliveto.browser.ui.tokens.ulivetoGlass
 
-/**
- * Four-element bottom navigation bar: back circle | url pill | forward circle | menu circle.
- *
- * Each element carries the same glass surface so the bar reads as a cohesive unit
- * while staying visually light over page content.
- */
 @Composable
 fun SimpleNavBar(
     currentUrl: String,
@@ -67,33 +61,40 @@ fun SimpleNavBar(
         )
 
         val domain = remember(currentUrl) { extractDomain(currentUrl) }
-        Row(
+        Surface(
+            onClick = onAddressTap,
             modifier = Modifier
                 .weight(1f)
                 .height(44.dp)
-                .ulivetoGlass(GlassMaterial.Functional, PillShape)
-                .clickable(onClick = onAddressTap)
-                .padding(horizontal = 14.dp)
                 .semantics { contentDescription = "Address bar: $currentUrl" },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+            shape = PillShape,
+            color = NeutralLight,
+            shadowElevation = 4.dp,
         ) {
-            Icon(
-                imageVector = Icons.Filled.Lock,
-                contentDescription = null,
-                tint = CharcoalDark.copy(alpha = 0.6f),
-                modifier = Modifier.size(12.dp),
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(
-                text = domain,
-                color = CharcoalDark,
-                fontFamily = HankenGrotesk,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = null,
+                    tint = CharcoalDark.copy(alpha = 0.55f),
+                    modifier = Modifier.size(12.dp),
+                )
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    text = domain,
+                    color = CharcoalDark,
+                    fontFamily = HankenGrotesk,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         NavCircle(
@@ -120,19 +121,25 @@ private fun NavCircle(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .size(44.dp)
-            .ulivetoGlass(GlassMaterial.Functional, CircleShape)
-            .clickable(enabled = enabled, onClick = onClick),
-        contentAlignment = Alignment.Center,
+    Surface(
+        onClick = onClick,
+        modifier = modifier.size(44.dp),
+        enabled = enabled,
+        shape = CircleShape,
+        color = NeutralLight,
+        shadowElevation = 4.dp,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = if (enabled) CharcoalDark else CharcoalDark.copy(alpha = 0.26f),
-            modifier = Modifier.size(20.dp),
-        )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = if (enabled) CharcoalDark else CharcoalDark.copy(alpha = 0.30f),
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 

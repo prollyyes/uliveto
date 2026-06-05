@@ -163,17 +163,21 @@ fun StartScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            AddressField(
-                state = AddressFieldState.Pill,
-                searchEngine = prefs.searchEngine,
-                onSubmit = { url ->
-                    onNavigateToBrowser(url)
-                    addressExpanded = false
-                },
-                onDismiss = { addressExpanded = false },
-                onPillTap = { addressExpanded = true },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (!addressExpanded) {
+                AddressField(
+                    state = AddressFieldState.Pill,
+                    searchEngine = prefs.searchEngine,
+                    onSubmit = { url ->
+                        onNavigateToBrowser(url)
+                        addressExpanded = false
+                    },
+                    onDismiss = { addressExpanded = false },
+                    onPillTap = { addressExpanded = true },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                Spacer(modifier = Modifier.height(52.dp))
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 
