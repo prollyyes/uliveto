@@ -1,10 +1,7 @@
 package it.uliveto.browser.ui.tokens
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
@@ -53,13 +50,6 @@ fun Modifier.ulivetoGlass(
     return this
         .shadow(elevation = elevation, shape = shape, clip = false)
         .clip(shape)
-        .then(
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                Modifier.blur(radius = 22.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-            } else {
-                Modifier
-            }
-        )
         .background(fillColor)
         .drawWithContent {
             drawContent()

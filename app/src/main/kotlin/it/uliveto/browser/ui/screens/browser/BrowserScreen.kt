@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -124,6 +125,11 @@ fun BrowserScreen(
             session.setNavigationDelegate(null)
             session.close()
         }
+    }
+
+    // Intercept system back: navigate in-page history before popping the screen
+    BackHandler(enabled = canGoBack) {
+        session.goBack()
     }
 
     // Scroll-to-hide chrome

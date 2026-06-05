@@ -71,6 +71,7 @@ fun StartScreen(
 
     BackHandler(enabled = addressExpanded) { addressExpanded = false }
 
+
     // Show name prompt once if name is blank; don't re-trigger on every recomposition
     LaunchedEffect(prefs.userName, hasShownNamePrompt) {
         if (prefs.userName.isBlank() && !hasShownNamePrompt) {
@@ -163,7 +164,7 @@ fun StartScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             AddressField(
-                state = if (addressExpanded) AddressFieldState.Expanded else AddressFieldState.Pill,
+                state = AddressFieldState.Pill,
                 searchEngine = prefs.searchEngine,
                 onSubmit = { url ->
                     onNavigateToBrowser(url)
@@ -185,6 +186,19 @@ fun StartScreen(
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(bottom = 16.dp),
+            )
+        }
+
+        // Expanded address overlay — rendered at Box level so it covers the full screen
+        if (addressExpanded) {
+            AddressField(
+                state = AddressFieldState.Expanded,
+                searchEngine = prefs.searchEngine,
+                onSubmit = { url ->
+                    onNavigateToBrowser(url)
+                    addressExpanded = false
+                },
+                onDismiss = { addressExpanded = false },
             )
         }
     }

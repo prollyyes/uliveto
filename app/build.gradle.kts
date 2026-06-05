@@ -55,8 +55,8 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
         jniLibs {
-            // Native libs are extracted from the APK at install time by the OS, not at runtime
-            useLegacyPackaging = false
+            // GeckoView .so files are not 16 KB page-aligned; extract to disk at install time
+            useLegacyPackaging = true
         }
     }
 }
