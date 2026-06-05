@@ -25,7 +25,10 @@
       "Bash(jar tf *)",
       "Bash(jar xf *)",
       "Bash(javap -p org/mozilla/geckoview/GeckoSessionSettings.class)",
-      "Bash(xargs cat -n)"
+      "Bash(xargs cat -n)",
+      "Bash(./gradlew testDebugUnitTest)",
+      "Bash(./gradlew testDebugUnitTest --stacktrace)",
+      "Bash(./gradlew test *)"
     ]
   }
 }
