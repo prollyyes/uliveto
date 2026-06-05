@@ -60,50 +60,48 @@ fun OverflowMenuSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            // Row 1: New tab, Bookmarks, Share
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 OverflowItem(
                     icon = Icons.Filled.Add,
                     label = "New tab",
                     onClick = onNewTab,
+                    modifier = Modifier.weight(1f),
                 )
                 OverflowItem(
                     icon = Icons.Filled.Bookmarks,
                     label = "Bookmarks",
                     onClick = onBookmarks,
+                    modifier = Modifier.weight(1f),
                 )
                 OverflowItem(
                     icon = Icons.Filled.Share,
                     label = "Share",
                     onClick = onShare,
+                    modifier = Modifier.weight(1f),
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Row 2: Reader, Find, Desktop site
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 OverflowItem(
                     icon = Icons.AutoMirrored.Filled.MenuBook,
                     label = "Reader",
                     onClick = onReader,
                     enabled = isReaderAvailable,
+                    modifier = Modifier.weight(1f),
                 )
                 OverflowItem(
                     icon = Icons.Filled.Search,
                     label = "Find",
                     onClick = onFind,
+                    modifier = Modifier.weight(1f),
                 )
                 OverflowItem(
                     icon = Icons.Filled.DesktopWindows,
                     label = "Desktop site",
                     onClick = onDesktopSite,
+                    modifier = Modifier.weight(1f),
                 )
             }
 

@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -31,58 +32,51 @@ import androidx.compose.ui.unit.sp
 import it.uliveto.browser.ui.tokens.CharcoalDark
 import it.uliveto.browser.ui.tokens.GlassMaterial
 import it.uliveto.browser.ui.tokens.HankenGrotesk
-import it.uliveto.browser.ui.tokens.HourglassShape
+import it.uliveto.browser.ui.tokens.PillShape
 import it.uliveto.browser.ui.tokens.ulivetoGlass
 
 /**
- * Loaded-page navigation bar with the custom hourglass shape.
+ * Four-element bottom navigation bar: back circle | url pill | forward circle | menu circle.
  *
- * Contains back/forward navigation buttons and a centered domain display
- * that opens the address sheet when tapped.
+ * Each element carries the same glass surface so the bar reads as a cohesive unit
+ * while staying visually light over page content.
  */
 @Composable
-fun HourglassNav(
+fun SimpleNavBar(
     currentUrl: String,
     canGoBack: Boolean,
     canGoForward: Boolean,
     onBack: () -> Unit,
     onForward: () -> Unit,
     onAddressTap: () -> Unit,
+    onMenuTap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(44.dp)
-            .ulivetoGlass(GlassMaterial.Functional, HourglassShape)
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Back button — 48dp hit target, extends into waist area
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clickable(enabled = canGoBack, onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Go back",
-                tint = if (canGoBack) CharcoalDark else CharcoalDark.copy(alpha = 0.26f),
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        NavCircle(
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Go back",
+            enabled = canGoBack,
+            onClick = onBack,
+        )
 
-        // Center address section
         val domain = remember(currentUrl) { extractDomain(currentUrl) }
         Row(
             modifier = Modifier
                 .weight(1f)
-                .semantics { contentDescription = "Address bar: $currentUrl" }
-                .clickable(onClick = onAddressTap),
-            horizontalArrangement = Arrangement.Center,
+                .height(44.dp)
+                .ulivetoGlass(GlassMaterial.Functional, PillShape)
+                .clickable(onClick = onAddressTap)
+                .padding(horizontal = 14.dp)
+                .semantics { contentDescription = "Address bar: $currentUrl" },
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
         ) {
             Icon(
                 imageVector = Icons.Filled.Lock,
@@ -102,29 +96,27 @@ fun HourglassNav(
             )
         }
 
-        // Forward button
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clickable(enabled = canGoForward, onClick = onForward),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Go forward",
-                tint = if (canGoForward) CharcoalDark else CharcoalDark.copy(alpha = 0.26f),
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        NavCircle(
+            icon = Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = "Go forward",
+            enabled = canGoForward,
+            onClick = onForward,
+        )
+
+        NavCircle(
+            icon = Icons.Filled.MoreVert,
+            contentDescription = "More options",
+            enabled = true,
+            onClick = onMenuTap,
+        )
     }
 }
 
-/**
- * Three-dot overflow menu button styled as a circular glass bubble.
- * Companion to [HourglassNav] in the bottom chrome row.
- */
 @Composable
-fun OverflowDot(
+private fun NavCircle(
+    icon: ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -132,13 +124,13 @@ fun OverflowDot(
         modifier = modifier
             .size(44.dp)
             .ulivetoGlass(GlassMaterial.Functional, CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = Icons.Filled.MoreVert,
-            contentDescription = "More options",
-            tint = CharcoalDark,
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = if (enabled) CharcoalDark else CharcoalDark.copy(alpha = 0.26f),
             modifier = Modifier.size(20.dp),
         )
     }

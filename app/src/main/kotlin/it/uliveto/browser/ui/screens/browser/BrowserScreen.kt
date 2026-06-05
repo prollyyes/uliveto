@@ -5,14 +5,10 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -41,8 +37,7 @@ import it.uliveto.browser.ui.components.AddressFieldState
 import it.uliveto.browser.ui.components.ClassicBottomBar
 import it.uliveto.browser.ui.components.ClassicTopBar
 import it.uliveto.browser.ui.components.FindInPageBar
-import it.uliveto.browser.ui.components.HourglassNav
-import it.uliveto.browser.ui.components.OverflowDot
+import it.uliveto.browser.ui.components.SimpleNavBar
 import it.uliveto.browser.ui.components.OverflowMenuSheet
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
@@ -52,7 +47,7 @@ import org.mozilla.geckoview.GeckoView
 /**
  * Full-screen browser screen.
  *
- * Shows a [GeckoView] filling the screen with a floating [HourglassNav] + [OverflowDot]
+ * Shows a [GeckoView] filling the screen with a floating [SimpleNavBar]
  * anchored to the bottom. The chrome hides on scroll-down and reappears on scroll-up.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,7 +126,7 @@ fun BrowserScreen(
         }
     }
 
-    // Scroll-to-hide chrome (HourglassNav + OverflowDot)
+    // Scroll-to-hide chrome
     val density = LocalDensity.current
     val chromeHeightPx = with(density) { 120.dp.toPx() }
 
@@ -209,31 +204,22 @@ fun BrowserScreen(
                 modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding(),
             )
         } else {
-            Row(
+            SimpleNavBar(
+                currentUrl = currentUrl,
+                canGoBack = canGoBack,
+                canGoForward = canGoForward,
+                onBack = { session.goBack() },
+                onForward = { session.goForward() },
+                onAddressTap = { addressExpanded = true },
+                onMenuTap = { showOverflow = true },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 12.dp)
+                    .navigationBarsPadding()
                     .graphicsLayer {
                         translationY = animatedTranslationY
                         alpha = chromeAlpha.coerceIn(0f, 1f)
                     },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HourglassNav(
-                    currentUrl = currentUrl,
-                    canGoBack = canGoBack,
-                    canGoForward = canGoForward,
-                    onBack = { session.goBack() },
-                    onForward = { session.goForward() },
-                    onAddressTap = { addressExpanded = true },
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(modifier = Modifier.width(11.dp))
-                OverflowDot(
-                    onClick = { showOverflow = true },
-                )
-            }
+            )
         }
 
         // ── Expanded address overlay ───────────────────────────────────────────
