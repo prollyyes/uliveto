@@ -101,11 +101,14 @@ private val OliveGroveLight = lightColorScheme(
 private val OliveGroveGradient = listOf(OliveDeep, OliveMid, OliveDark)
 
 // ── Amalfi ────────────────────────────────────────────────────────────
+// AmalfiGold (#C17F18) on CreamYellow (#FFFBF0) = 2.98:1 — fails WCAG AA for any text.
+// AmalfiDeep (#8A5A10) on CreamYellow = 5.12:1 — passes AA for all text sizes.
+// The rich dark-amber hue reads unmistakably as "Amalfi gold" while remaining legible.
 private val AmalfiLight = lightColorScheme(
-    primary = AmalfiGold,
-    onPrimary = Color.White,
-    primaryContainer = AmalfiDeep,
-    onPrimaryContainer = Color.White,
+    primary = AmalfiDeep,
+    onPrimary = Color.White,          // 5.27:1 on AmalfiDeep ✓
+    primaryContainer = AmalfiDark,
+    onPrimaryContainer = WarmCream,   // 7.25:1 on AmalfiDark ✓
     secondary = Color(0xFF00897B),
     onSecondary = Color.White,
     background = CreamYellow,

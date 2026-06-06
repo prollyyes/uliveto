@@ -183,6 +183,10 @@ fun BrowserScreen(
                 hasUserGesture: Boolean,
             ) {
                 val resolved = url ?: "about:blank"
+                // GeckoSession fires onLocationChange("about:blank") during session
+                // startup/initialisation before committing the real URL — suppress it
+                // so the URL bar never flashes blank during a navigation.
+                if (resolved == "about:blank") return
                 setCurrentUrl(resolved)
                 TabManager.updateTab(tabId, url = resolved)
             }

@@ -198,7 +198,7 @@ fun SettingsScreen(
                                 text = if (prefs.userName.isBlank()) "Not set" else prefs.userName,
                                 fontFamily = HankenGrotesk, fontSize = 15.sp,
                                 color = if (prefs.userName.isBlank())
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f)
+                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                                 else MaterialTheme.colorScheme.onBackground,
                             )
                             TextButton(onClick = { editing = true }) {
@@ -300,7 +300,7 @@ fun SettingsScreen(
                         Text("Safe Browsing", fontFamily = HankenGrotesk, fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onBackground)
                         Text("Safe Browsing sends URLs to Google's servers.", fontFamily = HankenGrotesk,
-                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                             lineHeight = 17.sp)
                     }
                     Switch(checked = prefs.safeBrowsingEnabled, onCheckedChange = { viewModel.setSafeBrowsing(it) })
@@ -322,7 +322,7 @@ fun SettingsScreen(
                     Text("Version", fontFamily = HankenGrotesk, fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onBackground)
                     Text(BuildConfig.VERSION_NAME, fontFamily = HankenGrotesk, fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                 }
             }
             item { ClickableRow("Open source licenses") { showLicensesDialog = true } }
@@ -369,7 +369,7 @@ private fun ThemeSwatch(
             fontFamily = HankenGrotesk,
             fontSize = 11.sp,
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = if (selected) 1f else 0.65f),
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = if (selected) 1f else 0.75f),
         )
     }
 }
