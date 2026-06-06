@@ -82,9 +82,12 @@ export const FeaturesGrid: React.FC = () => {
           {cards.map((card, index) => (
             <div 
               key={index}
-              className="p-8 rounded-2xl bg-slate-900/40 border border-slate-800/40 glass-surface hover:border-[#b25737]/30 hover:shadow-[0_8px_30px_rgba(178,87,55,0.05)] transition-all duration-300 group"
+              className="relative p-8 rounded-2xl bg-slate-900/45 border border-slate-800/50 glass-surface hover:border-[#b25737]/50 hover:shadow-[0_15px_45px_rgba(178,87,55,0.08)] transition-all duration-500 group overflow-hidden"
             >
-              <div className="w-12 h-12 rounded-xl bg-slate-950/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform border border-slate-800">
+              {/* Dynamic hover sheen effect overlay */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/4 to-transparent w-[200%] h-[200%] -translate-x-[100%] -translate-y-[100%] rotate-45 transition-transform duration-1000 ease-out group-hover:translate-x-[100%] group-hover:translate-y-[100%] pointer-events-none" />
+
+              <div className="w-12 h-12 rounded-xl bg-slate-950/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform border border-slate-800 group-hover:border-[#b25737]/50">
                 {card.icon}
               </div>
               <h3 className="font-hanken font-bold text-lg text-white mb-3 tracking-wide">{card.title}</h3>

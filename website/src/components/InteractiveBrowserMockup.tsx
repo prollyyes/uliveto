@@ -116,12 +116,15 @@ export const InteractiveBrowserMockup: React.FC = () => {
 
           {/* Right Panel: Phone Frame Mockup */}
           <div className="lg:col-span-6 flex justify-center order-1 lg:order-2">
-            <div className="relative w-[280px] h-[580px] md:w-[310px] md:h-[640px] p-[10px] bg-slate-900 rounded-[48px] border-4 border-slate-700 shadow-2xl overflow-hidden flex items-center justify-center">
+            <div className="relative w-[280px] h-[580px] md:w-[310px] md:h-[640px] p-[10px] bg-slate-950 rounded-[48px] border-[6px] metal-border-bronze shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden flex items-center justify-center">
+              {/* Phone Specular Shine overlaying the entire glass mockup */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/8 to-transparent w-[300%] h-[300%] -translate-x-[100%] -translate-y-[100%] rotate-45 animate-shine pointer-events-none z-30" style={{ animationDuration: '6s' }} />
+              
               {/* Speaker Bar */}
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-1 bg-slate-800 rounded-full z-20" />
               {/* Front Camera Notch */}
               <div className="absolute top-5 left-1/2 -translate-x-1/2 w-6 h-6 bg-black rounded-full z-20 border border-slate-850" />
-
+ 
               {/* Viewport container */}
               <div className="relative w-full h-full rounded-[38px] overflow-hidden bg-slate-950">
                 <img
@@ -130,7 +133,7 @@ export const InteractiveBrowserMockup: React.FC = () => {
                   className="w-full h-full object-cover transition-opacity duration-300"
                 />
               </div>
-
+ 
               {/* Home Indicator */}
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-28 h-1 bg-slate-400/30 rounded-full z-20" />
             </div>
