@@ -20,7 +20,6 @@ import it.uliveto.browser.ui.screens.browser.BrowserViewModel
 import it.uliveto.browser.ui.screens.settings.PrivacyReceiptsScreen
 import it.uliveto.browser.ui.screens.settings.SettingsScreen
 import it.uliveto.browser.ui.screens.settings.SettingsViewModel
-import it.uliveto.browser.ui.screens.start.StartScreen
 import it.uliveto.browser.ui.screens.start.StartViewModel
 import it.uliveto.browser.ui.screens.tabs.TabsScreen
 
@@ -42,18 +41,25 @@ fun UlivetoNavGraph(
             modifier = modifier,
         ) {
             composable("start") {
-                val startVmFactory = ViewModelFactory {
-                    StartViewModel(appContainer.userPrefsRepository)
-                }
-                val startVm: StartViewModel = viewModel(factory = startVmFactory)
-                StartScreen(
-                    viewModel = startVm,
+                val startVm: StartViewModel = viewModel(
+                    factory = ViewModelFactory { StartViewModel(appContainer.userPrefsRepository) },
+                )
+                val bookmarksVm: BookmarksViewModel = viewModel(
+                    factory = ViewModelFactory { BookmarksViewModel(appContainer.bookmarksRepository) },
+                )
+                HomePager(
+                    startViewModel = startVm,
+                    bookmarksViewModel = bookmarksVm,
                     onNavigateToBrowser = { url ->
                         val tab = TabManager.createTab(url, appContainer.geckoRuntime)
                         navController.navigate("browser/${tab.id}")
                     },
-                    onNavigateToTabs = { navController.navigate("tabs") },
-                    onNavigateToBookmarks = { navController.navigate("bookmarks") },
+                    onSelectTab = { tabId ->
+                        TabManager.setActiveTab(tabId)
+                        navController.navigate("browser/$tabId") {
+                            popUpTo("start") { saveState = true }
+                        }
+                    },
                     onNavigateToSettings = { navController.navigate("settings") },
                 )
             }
