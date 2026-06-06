@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -158,6 +157,13 @@ fun BrowserScreen(
             }
         })
 
+        // Fire the initial loadUri NOW — DisposableEffect runs after AndroidView's layout
+        // phase, meaning GeckoView.setSession() has already been called. Loading after the
+        // view is attached prevents the "blank page" bug where GeckoView renders nothing
+        // because it was not connected when the content finished loading.
+        val initialUrl = TabManager.consumeInitialUrl(tabId)
+        if (initialUrl != null) session.loadUri(initialUrl)
+
         onDispose {
             // Clear delegates but keep session alive — TabManager owns the lifecycle
             session.setNavigationDelegate(null)
@@ -169,17 +175,15 @@ fun BrowserScreen(
     BackHandler(enabled = canGoBack) { session.goBack() }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // GeckoView fills the whole screen. A static statusBarsPadding() wrapper keeps
-        // web content below the status bar / notch without causing a relayout on every
-        // scroll event (animated padding was the root cause of scroll choppiness).
-        Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-            androidx.compose.ui.viewinterop.AndroidView(
-                factory = { ctx -> GeckoView(ctx).apply { setSession(session) } },
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        // GeckoView fills the entire screen edge-to-edge. The gradient scrim below handles
+        // status-bar icon legibility without any runtime layout changes. No animated
+        // padding on the view — that was the root cause of scroll choppiness.
+        androidx.compose.ui.viewinterop.AndroidView(
+            factory = { ctx -> GeckoView(ctx).apply { setSession(session) } },
+            modifier = Modifier.fillMaxSize(),
+        )
 
-        // Narrow status-bar scrim — only covers the status bar area for icon legibility
+        // Narrow status-bar scrim — keeps system icons readable over any web content
         Box(
             modifier = Modifier
                 .fillMaxWidth()
