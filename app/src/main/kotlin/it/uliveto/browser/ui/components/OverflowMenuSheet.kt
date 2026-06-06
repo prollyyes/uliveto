@@ -15,8 +15,11 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.DesktopWindows
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -42,6 +45,9 @@ fun OverflowMenuSheet(
     sheetState: SheetState,
     isReaderAvailable: Boolean,
     onNewTab: () -> Unit,
+    onTabs: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
     onBookmarks: () -> Unit,
     onShare: () -> Unit,
     onReader: () -> Unit,
@@ -68,6 +74,23 @@ fun OverflowMenuSheet(
                     modifier = Modifier.weight(1f),
                 )
                 OverflowItem(
+                    icon = Icons.Filled.Tab,
+                    label = "Tabs",
+                    onClick = onTabs,
+                    modifier = Modifier.weight(1f),
+                )
+                OverflowItem(
+                    icon = Icons.Filled.Home,
+                    label = "Homepage",
+                    onClick = onHome,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                OverflowItem(
                     icon = Icons.Filled.Bookmarks,
                     label = "Bookmarks",
                     onClick = onBookmarks,
@@ -77,6 +100,12 @@ fun OverflowMenuSheet(
                     icon = Icons.Filled.Share,
                     label = "Share",
                     onClick = onShare,
+                    modifier = Modifier.weight(1f),
+                )
+                OverflowItem(
+                    icon = Icons.Filled.Settings,
+                    label = "Settings",
+                    onClick = onSettings,
                     modifier = Modifier.weight(1f),
                 )
             }

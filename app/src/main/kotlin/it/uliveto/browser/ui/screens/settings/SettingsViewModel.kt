@@ -24,4 +24,5 @@ class SettingsViewModel(private val repo: UserPrefsRepository) : ViewModel() {
     fun setNavStyle(n: NavStyle) = viewModelScope.launch { repo.setNavStyle(n) }
     fun setSafeBrowsing(b: Boolean) = viewModelScope.launch { repo.setSafeBrowsingEnabled(b) }
     fun setUserName(name: String) = viewModelScope.launch { repo.setUserName(name) }
+    fun setCustomSearchEngineUrl(url: String) = viewModelScope.launch { repo.setCustomSearchEngineUrl(url) }
 }

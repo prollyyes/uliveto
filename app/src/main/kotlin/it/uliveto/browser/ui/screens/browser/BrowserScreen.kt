@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import it.uliveto.browser.domain.SearchEngine
 import it.uliveto.browser.ui.components.AddressField
 import it.uliveto.browser.ui.components.AddressFieldState
 import it.uliveto.browser.ui.components.FindInPageBar
@@ -60,8 +61,12 @@ fun BrowserScreen(
     runtime: GeckoRuntime,
     vmFactory: ViewModelProvider.Factory,
     initialUrl: String = "about:blank",
+    searchEngine: SearchEngine = SearchEngine.DuckDuckGo,
+    customSearchEngineUrl: String = "",
     onNavigateToBookmarks: () -> Unit = {},
     onNavigateToTabs: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
     onNewTab: () -> Unit = {},
 ) {
     @Suppress("UNUSED_VARIABLE")
@@ -236,6 +241,8 @@ fun BrowserScreen(
             AddressField(
                 state = AddressFieldState.Expanded,
                 currentUrl = currentUrl,
+                searchEngine = searchEngine,
+                customSearchEngineUrl = customSearchEngineUrl,
                 onSubmit = { url ->
                     session.loadUri(url)
                     addressExpanded = false
@@ -252,6 +259,18 @@ fun BrowserScreen(
                 onNewTab = {
                     showOverflow = false
                     onNewTab()
+                },
+                onTabs = {
+                    showOverflow = false
+                    onNavigateToTabs()
+                },
+                onHome = {
+                    showOverflow = false
+                    onNavigateToHome()
+                },
+                onSettings = {
+                    showOverflow = false
+                    onNavigateToSettings()
                 },
                 onBookmarks = {
                     showOverflow = false

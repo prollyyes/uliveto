@@ -111,11 +111,8 @@ fun StartScreen(
         Brush.radialGradient(ulivetoColors.gradientColors)
     }
 
-    // Rotate greeting daily; stable within the day
-    val greetingWord = remember {
-        val dayOfYear = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR)
-        mediterraneanGreetings[dayOfYear % mediterraneanGreetings.size]
-    }
+    // New random greeting every time the Homepage is visited
+    val greetingWord = remember { mediterraneanGreetings.random() }
     val greeting = if (prefs.userName.isBlank()) greetingWord else "$greetingWord, ${prefs.userName}"
 
     Box(
@@ -158,6 +155,8 @@ fun StartScreen(
             EngineLine(
                 engine = prefs.searchEngine,
                 onEngineSelected = { viewModel.setSearchEngine(it) },
+                customSearchEngineUrl = prefs.customSearchEngineUrl,
+                onCustomUrlChange = { viewModel.setCustomSearchEngineUrl(it) },
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -179,6 +178,7 @@ fun StartScreen(
                 AddressField(
                     state = AddressFieldState.Pill,
                     searchEngine = prefs.searchEngine,
+                    customSearchEngineUrl = prefs.customSearchEngineUrl,
                     onSubmit = { url ->
                         onNavigateToBrowser(url)
                         addressExpanded = false
@@ -208,6 +208,7 @@ fun StartScreen(
             AddressField(
                 state = AddressFieldState.Expanded,
                 searchEngine = prefs.searchEngine,
+                customSearchEngineUrl = prefs.customSearchEngineUrl,
                 onSubmit = { url ->
                     onNavigateToBrowser(url)
                     addressExpanded = false

@@ -64,8 +64,12 @@ fun UlivetoNavGraph(
                     runtime = appContainer.geckoRuntime,
                     vmFactory = browserVmFactory,
                     initialUrl = Uri.decode(url),
+                    searchEngine = prefs.searchEngine,
+                    customSearchEngineUrl = prefs.customSearchEngineUrl,
                     onNavigateToBookmarks = { navController.navigate("bookmarks") },
                     onNavigateToTabs = { navController.navigate("tabs") },
+                    onNavigateToSettings = { navController.navigate("settings") },
+                    onNavigateToHome = { navController.navigate("start") },
                     onNewTab = { navController.navigate("start") },
                 )
             }

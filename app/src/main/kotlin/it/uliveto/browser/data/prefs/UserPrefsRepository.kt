@@ -26,6 +26,7 @@ class UserPrefsRepository(context: Context) {
                     SearchEngine.DuckDuckGo
                 },
                 userName = prefs[Keys.USER_NAME] ?: "",
+                customSearchEngineUrl = prefs[Keys.CUSTOM_SEARCH_ENGINE_URL] ?: "",
                 theme = try {
                     AppTheme.valueOf(prefs[Keys.THEME] ?: AppTheme.Terracotta.name)
                 } catch (_: IllegalArgumentException) {
@@ -46,6 +47,9 @@ class UserPrefsRepository(context: Context) {
     suspend fun setUserName(name: String) =
         dataStore.edit { it[Keys.USER_NAME] = name }
 
+    suspend fun setCustomSearchEngineUrl(url: String) =
+        dataStore.edit { it[Keys.CUSTOM_SEARCH_ENGINE_URL] = url }
+
     suspend fun setTheme(theme: AppTheme) =
         dataStore.edit { it[Keys.THEME] = theme.name }
 
@@ -58,6 +62,7 @@ class UserPrefsRepository(context: Context) {
     private object Keys {
         val SEARCH_ENGINE = stringPreferencesKey("search_engine")
         val USER_NAME = stringPreferencesKey("user_name")
+        val CUSTOM_SEARCH_ENGINE_URL = stringPreferencesKey("custom_search_engine_url")
         val THEME = stringPreferencesKey("theme")
         val NAV_STYLE = stringPreferencesKey("nav_style")
         val SAFE_BROWSING = booleanPreferencesKey("safe_browsing")

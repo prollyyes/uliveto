@@ -71,6 +71,7 @@ fun AddressField(
     state: AddressFieldState,
     currentUrl: String = "",
     searchEngine: SearchEngine = SearchEngine.DuckDuckGo,
+    customSearchEngineUrl: String = "",
     onSubmit: (String) -> Unit,
     onDismiss: () -> Unit = {},
     onPillTap: () -> Unit = {},
@@ -103,6 +104,7 @@ fun AddressField(
             AddressFieldState.Expanded -> ExpandedState(
                 currentUrl = currentUrl,
                 searchEngine = searchEngine,
+                customSearchEngineUrl = customSearchEngineUrl,
                 onSubmit = onSubmit,
                 onDismiss = onDismiss,
             )
@@ -193,6 +195,7 @@ private fun HourglassCenterState(
 private fun ExpandedState(
     currentUrl: String,
     searchEngine: SearchEngine,
+    customSearchEngineUrl: String,
     onSubmit: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -242,7 +245,7 @@ private fun ExpandedState(
                 keyboardActions = KeyboardActions(
                     onSearch = {
                         if (text.isNotBlank()) {
-                            val url = UrlClassifier.buildNavigationUrl(text, searchEngine)
+                            val url = UrlClassifier.buildNavigationUrl(text, searchEngine, customSearchEngineUrl)
                             onSubmit(url)
                         } else {
                             onDismiss()

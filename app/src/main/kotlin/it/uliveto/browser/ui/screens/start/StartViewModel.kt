@@ -25,6 +25,10 @@ class StartViewModel(private val prefsRepository: UserPrefsRepository) : ViewMod
         viewModelScope.launch { prefsRepository.setUserName(name) }
     }
 
+    fun setCustomSearchEngineUrl(url: String) {
+        viewModelScope.launch { prefsRepository.setCustomSearchEngineUrl(url) }
+    }
+
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch { prefsRepository.setTheme(theme) }
     }

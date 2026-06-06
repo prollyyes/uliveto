@@ -220,7 +220,12 @@ fun SettingsScreen(
                 ) {
                     Text("Search engine", fontFamily = HankenGrotesk, fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onBackground)
-                    EngineLine(engine = prefs.searchEngine, onEngineSelected = { viewModel.setSearchEngine(it) })
+                    EngineLine(
+                        engine = prefs.searchEngine,
+                        onEngineSelected = { viewModel.setSearchEngine(it) },
+                        customSearchEngineUrl = prefs.customSearchEngineUrl,
+                        onCustomUrlChange = { viewModel.setCustomSearchEngineUrl(it) },
+                    )
                 }
             }
             item { SectionDivider() }
