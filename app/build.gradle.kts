@@ -61,6 +61,19 @@ android {
     }
 }
 
+// iCloud Drive running on ~/Documents creates " 2" conflict copies inside the build
+// directory, which break the aapt2 file-name validation. Remove them before every build.
+tasks.named("preBuild") {
+    doFirst {
+        val buildDir = layout.buildDirectory.get().asFile
+        if (buildDir.exists()) {
+            fileTree(buildDir)
+                .matching { include("**/* 2", "**/* 2.*") }
+                .forEach { it.deleteRecursively() }
+        }
+    }
+}
+
 // Exclude service-glean from all AC transitive dependencies
 configurations.all {
     exclude(group = "org.mozilla.components", module = "service-glean")
