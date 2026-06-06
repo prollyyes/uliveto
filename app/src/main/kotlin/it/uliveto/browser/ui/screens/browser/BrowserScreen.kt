@@ -235,10 +235,10 @@ fun BrowserScreen(
         androidx.compose.ui.viewinterop.AndroidView(
             factory = { ctx ->
                 val geckoView = GeckoView(ctx).apply {
+                    // loadUri was already called in TabManager.createTab(), so DNS + TCP + TLS
+                    // are in flight before the navigation animation even starts. setSession()
+                    // wires up the compositor so Gecko can render to this View.
                     setSession(session)
-                    // Load immediately after setSession so there is no blank-frame delay
-                    val url = TabManager.consumeInitialUrl(tabId)
-                    if (url != null) session.loadUri(url)
                 }
                 // Subclass so canChildScrollUp() uses the tracked GeckoView scroll position.
                 // SwipeRefreshLayout calls this before intercepting touches — if it returns
