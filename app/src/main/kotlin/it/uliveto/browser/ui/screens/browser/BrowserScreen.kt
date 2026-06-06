@@ -7,16 +7,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -107,17 +104,12 @@ fun BrowserScreen(
     var chromeOffsetY by remember { mutableFloatStateOf(0f) }
     var lastScrollY by remember { mutableIntStateOf(0) }
 
-    // Status bar + display cutout (front camera notch) height in px
-    val topInsetPx = WindowInsets.statusBars.union(WindowInsets.displayCutout).getTop(density)
-
     val animatedTranslationY by animateFloatAsState(
         targetValue = -chromeOffsetY,
         animationSpec = spring(stiffness = Spring.StiffnessMedium),
         label = "chrome_hide",
     )
-    // Both chrome alpha and top padding track the same animation
     val animatedChromeAlpha = (1f - animatedTranslationY / chromeHeightPx).coerceIn(0f, 1f)
-    val animatedTopPaddingDp = with(density) { (topInsetPx * animatedChromeAlpha).toDp() }
 
     // Captured setters avoid stale closure captures inside DisposableEffect
     val setCurrentUrl: (String) -> Unit = { currentUrl = it }
@@ -177,15 +169,15 @@ fun BrowserScreen(
     BackHandler(enabled = canGoBack) { session.goBack() }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // GeckoView gets top padding equal to the status-bar+notch height while chrome
-        // is visible; the padding collapses to zero as the user scrolls, letting the
-        // page fill the entire screen.
-        androidx.compose.ui.viewinterop.AndroidView(
-            factory = { ctx -> GeckoView(ctx).apply { setSession(session) } },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = animatedTopPaddingDp),
-        )
+        // GeckoView fills the whole screen. A static statusBarsPadding() wrapper keeps
+        // web content below the status bar / notch without causing a relayout on every
+        // scroll event (animated padding was the root cause of scroll choppiness).
+        Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+            androidx.compose.ui.viewinterop.AndroidView(
+                factory = { ctx -> GeckoView(ctx).apply { setSession(session) } },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
 
         // Narrow status-bar scrim — only covers the status bar area for icon legibility
         Box(
