@@ -1,66 +1,63 @@
 package it.uliveto.browser.ui.screens.browser
 
 import android.content.Intent
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import it.uliveto.browser.domain.SearchEngine
+import it.uliveto.browser.tabs.TabManager
 import it.uliveto.browser.ui.components.AddressField
 import it.uliveto.browser.ui.components.AddressFieldState
 import it.uliveto.browser.ui.components.FindInPageBar
-import it.uliveto.browser.ui.components.SimpleNavBar
 import it.uliveto.browser.ui.components.OverflowMenuSheet
+import it.uliveto.browser.ui.components.SimpleNavBar
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 
-/**
- * Full-screen browser screen.
- *
- * Shows a [GeckoView] filling the screen with a floating [SimpleNavBar]
- * anchored to the bottom. The chrome hides on scroll-down and reappears on scroll-up.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowserScreen(
     runtime: GeckoRuntime,
     vmFactory: ViewModelProvider.Factory,
-    initialUrl: String = "about:blank",
+    tabId: String,
     searchEngine: SearchEngine = SearchEngine.DuckDuckGo,
     customSearchEngineUrl: String = "",
     onNavigateToBookmarks: () -> Unit = {},
@@ -74,48 +71,60 @@ fun BrowserScreen(
 
     val context = LocalContext.current
     val view = LocalView.current
+    val density = LocalDensity.current
 
-    // Force white status bar icons so they're always legible over the gradient scrim
     SideEffect {
         WindowInsetsControllerCompat(
             (view.context as android.app.Activity).window, view,
         ).isAppearanceLightStatusBars = false
     }
 
-    val session = remember { GeckoSession() }
+    // Reuse the existing GeckoSession from TabManager — avoids re-creating the engine
+    val session = remember(tabId) {
+        TabManager.getSession(tabId) ?: GeckoSession().also { s ->
+            s.open(runtime)
+            s.loadUri("about:blank")
+        }
+    }
 
-    // Navigation state tracked via GeckoSession.NavigationDelegate
-    var currentUrl by remember { mutableStateOf(initialUrl) }
+    // Navigation state
+    var currentUrl by remember { mutableStateOf(TabManager.getTab(tabId)?.url ?: "about:blank") }
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
 
-    // Adaptive tint: sampled once per URL change — never per frame
-    // TODO: sample meta theme-color from browser-state (deferred to M8+)
-    @Suppress("UNUSED_VARIABLE")
-    val glassTint by remember(currentUrl) { mutableStateOf(Color(0xFFF7F7F9)) }
-
-    // Address field expansion state
+    // UI state
     var addressExpanded by remember { mutableStateOf(false) }
-
-    // Overflow sheet state — hoisted so animation persists across show/hide cycles
     var showOverflow by remember { mutableStateOf(false) }
     val overflowSheetState = rememberModalBottomSheetState()
-
     val isReaderAvailable by remember { mutableStateOf(true) }
-
-    // Find-in-page state
     var showFindInPage by remember { mutableStateOf(false) }
     var findQuery by remember { mutableStateOf("") }
-
-    // Desktop site toggle
     var isDesktopSite by remember { mutableStateOf(false) }
 
-    // Captured mutable state references for use inside the delegate lambda
+    // Chrome scroll — driven by GeckoSession.ScrollDelegate (NestedScrollConnection
+    // never fires for GeckoView because GeckoView intercepts all touch events)
+    val chromeHeightPx = with(density) { 120.dp.toPx() }
+    var chromeOffsetY by remember { mutableFloatStateOf(0f) }
+    var lastScrollY by remember { mutableIntStateOf(0) }
+
+    // Status bar + display cutout (front camera notch) height in px
+    val topInsetPx = WindowInsets.statusBars.union(WindowInsets.displayCutout).getTop(density)
+
+    val animatedTranslationY by animateFloatAsState(
+        targetValue = -chromeOffsetY,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "chrome_hide",
+    )
+    // Both chrome alpha and top padding track the same animation
+    val animatedChromeAlpha = (1f - animatedTranslationY / chromeHeightPx).coerceIn(0f, 1f)
+    val animatedTopPaddingDp = with(density) { (topInsetPx * animatedChromeAlpha).toDp() }
+
+    // Captured setters avoid stale closure captures inside DisposableEffect
     val setCurrentUrl: (String) -> Unit = { currentUrl = it }
     val setCanGoBack: (Boolean) -> Unit = { canGoBack = it }
     val setCanGoForward: (Boolean) -> Unit = { canGoForward = it }
 
-    DisposableEffect(session, runtime) {
+    DisposableEffect(session) {
         session.setNavigationDelegate(object : GeckoSession.NavigationDelegate {
             override fun onLocationChange(
                 session: GeckoSession,
@@ -123,7 +132,9 @@ fun BrowserScreen(
                 perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
                 hasUserGesture: Boolean,
             ) {
-                setCurrentUrl(url ?: "about:blank")
+                val resolved = url ?: "about:blank"
+                setCurrentUrl(resolved)
+                TabManager.updateTab(tabId, url = resolved)
             }
 
             override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
@@ -134,90 +145,82 @@ fun BrowserScreen(
                 setCanGoForward(canGoForward)
             }
         })
-        session.open(runtime)
-        session.loadUri(initialUrl)
-        onDispose {
-            session.setNavigationDelegate(null)
-            session.close()
-        }
-    }
 
-    // Intercept system back: navigate in-page history before popping the screen
-    BackHandler(enabled = canGoBack) {
-        session.goBack()
-    }
-
-    // Scroll-to-hide chrome
-    val density = LocalDensity.current
-    val chromeHeightPx = with(density) { 120.dp.toPx() }
-
-    var chromeOffsetY by remember { mutableFloatStateOf(0f) }
-
-    val scrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                val delta = available.y
-                chromeOffsetY = (chromeOffsetY + delta).coerceIn(-chromeHeightPx, 0f)
-                return Offset.Zero
-            }
-        }
-    }
-
-    // Animate the chrome translation — negative chromeOffsetY means chrome should slide down
-    val animatedTranslationY by animateFloatAsState(
-        targetValue = -chromeOffsetY,
-        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
-        label = "chrome_hide",
-    )
-    val chromeAlpha = 1f + chromeOffsetY / chromeHeightPx  // 1f when visible, 0f when hidden
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollConnection),
-    ) {
-        // ── GeckoView — fills entire screen ───────────────────────────────────
-        androidx.compose.ui.viewinterop.AndroidView(
-            factory = { ctx ->
-                GeckoView(ctx).apply {
-                    setSession(session)
+        // ScrollDelegate fires on the UI thread with absolute scroll position
+        session.setScrollDelegate(object : GeckoSession.ScrollDelegate {
+            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+                chromeOffsetY = when {
+                    scrollY == 0 -> 0f  // always reveal chrome at the top of the page
+                    else -> {
+                        val delta = scrollY - lastScrollY
+                        (chromeOffsetY - delta.toFloat()).coerceIn(-chromeHeightPx, 0f)
+                    }
                 }
-            },
-            modifier = Modifier.fillMaxSize(),
+                lastScrollY = scrollY
+            }
+        })
+
+        session.setContentDelegate(object : GeckoSession.ContentDelegate {
+            override fun onTitleChange(session: GeckoSession, title: String?) {
+                if (!title.isNullOrBlank()) TabManager.updateTab(tabId, title = title)
+            }
+        })
+
+        onDispose {
+            // Clear delegates but keep session alive — TabManager owns the lifecycle
+            session.setNavigationDelegate(null)
+            session.setScrollDelegate(null)
+            session.setContentDelegate(null)
+        }
+    }
+
+    BackHandler(enabled = canGoBack) { session.goBack() }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // GeckoView gets top padding equal to the status-bar+notch height while chrome
+        // is visible; the padding collapses to zero as the user scrolls, letting the
+        // page fill the entire screen.
+        androidx.compose.ui.viewinterop.AndroidView(
+            factory = { ctx -> GeckoView(ctx).apply { setSession(session) } },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = animatedTopPaddingDp),
         )
 
-        // ── Status bar gradient scrim — keeps icons legible over any page ────
+        // Narrow status-bar scrim — only covers the status bar area for icon legibility
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(36.dp)
                 .align(Alignment.TopCenter)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Black.copy(alpha = 0.45f), Color.Transparent),
+                        colors = listOf(Color.Black.copy(alpha = 0.40f), Color.Transparent),
                     )
                 ),
         )
 
-        // ── Find-in-page bar — shown above chrome when active ─────────────────
+        // Find-in-page bar — imePadding lifts it above the keyboard automatically
         if (showFindInPage) {
             FindInPageBar(
                 query = findQuery,
                 onQueryChange = { findQuery = it },
-                onPrevious = { /* stub: GeckoView find prev */ },
-                onNext = { /* stub: GeckoView find next */ },
+                onPrevious = { },
+                onNext = { },
                 onClose = {
                     showFindInPage = false
                     findQuery = ""
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = 12.dp, vertical = 76.dp),
+                    .imePadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             )
         }
 
-        // ── Bottom chrome ─────────────────────────────────────────────────────
-        if (!addressExpanded) {
+        // Bottom chrome — hidden while find-in-page is active, slides away on scroll-down
+        if (!addressExpanded && !showFindInPage) {
             SimpleNavBar(
                 currentUrl = currentUrl,
                 canGoBack = canGoBack,
@@ -231,12 +234,11 @@ fun BrowserScreen(
                     .navigationBarsPadding()
                     .graphicsLayer {
                         translationY = animatedTranslationY
-                        alpha = chromeAlpha.coerceIn(0f, 1f)
+                        alpha = animatedChromeAlpha
                     },
             )
         }
 
-        // ── Expanded address overlay ───────────────────────────────────────────
         if (addressExpanded) {
             AddressField(
                 state = AddressFieldState.Expanded,
@@ -251,11 +253,11 @@ fun BrowserScreen(
             )
         }
 
-        // ── Overflow menu sheet ────────────────────────────────────────────────
         if (showOverflow) {
             OverflowMenuSheet(
                 sheetState = overflowSheetState,
                 isReaderAvailable = isReaderAvailable,
+                isDesktopSite = isDesktopSite,
                 onNewTab = {
                     showOverflow = false
                     onNewTab()
@@ -284,10 +286,7 @@ fun BrowserScreen(
                     }
                     context.startActivity(Intent.createChooser(shareIntent, null))
                 },
-                onReader = {
-                    showOverflow = false
-                    // Stub: reader mode wired in future milestone
-                },
+                onReader = { showOverflow = false },
                 onFind = {
                     showFindInPage = true
                     showOverflow = false

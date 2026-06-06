@@ -44,6 +44,7 @@ private val SheetBackground = Color(0xFFF7F7F9).copy(alpha = 0.95f)
 fun OverflowMenuSheet(
     sheetState: SheetState,
     isReaderAvailable: Boolean,
+    isDesktopSite: Boolean = false,
     onNewTab: () -> Unit,
     onTabs: () -> Unit,
     onHome: () -> Unit,
@@ -128,7 +129,7 @@ fun OverflowMenuSheet(
                 )
                 OverflowItem(
                     icon = Icons.Filled.DesktopWindows,
-                    label = "Desktop site",
+                    label = if (isDesktopSite) "Mobile site" else "Desktop site",
                     onClick = onDesktopSite,
                     modifier = Modifier.weight(1f),
                 )

@@ -14,13 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.uliveto.browser.tabs.BrowserTab
+import it.uliveto.browser.tabs.TabManager
 import it.uliveto.browser.ui.LocalUlivetoColors
 import it.uliveto.browser.ui.tokens.HankenGrotesk
 import it.uliveto.browser.ui.tokens.InstrumentSerif
@@ -46,26 +48,28 @@ import it.uliveto.browser.ui.tokens.WarmCream
 
 private val TabCardShape = RoundedCornerShape(20.dp)
 
-private fun urlDisplayTitle(url: String): String = when {
-    url.isBlank() || url == "about:blank" -> "Homepage"
+private fun tabDisplayTitle(tab: BrowserTab): String = when {
+    tab.title.isNotBlank() -> tab.title
+    tab.url.isBlank() || tab.url == "about:blank" -> "Homepage"
     else -> try {
-        android.net.Uri.parse(url).host?.removePrefix("www.") ?: url
+        android.net.Uri.parse(tab.url).host?.removePrefix("www.") ?: tab.url
     } catch (_: Exception) {
-        url
+        tab.url
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabsScreen(
-    currentUrl: String,
-    onSelectTab: () -> Unit,
+    onSelectTab: (tabId: String) -> Unit,
+    onCloseTab: (tabId: String) -> Unit,
     onNewTab: () -> Unit,
     onBack: () -> Unit,
 ) {
     val ulivetoColors = LocalUlivetoColors.current
     val gradient = Brush.radialGradient(ulivetoColors.gradientColors)
-    val title = urlDisplayTitle(currentUrl)
+    val tabs = TabManager.tabs
+    val tabCount = tabs.size
 
     Box(
         modifier = Modifier
@@ -100,7 +104,7 @@ fun TabsScreen(
                         .padding(start = 4.dp),
                 )
                 Text(
-                    text = "1 open",
+                    text = "$tabCount open",
                     fontFamily = HankenGrotesk,
                     fontSize = 13.sp,
                     color = WarmCream.copy(alpha = 0.7f),
@@ -117,59 +121,66 @@ fun TabsScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                item {
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { value ->
-                            if (value != SwipeToDismissBoxValue.Settled) {
-                                onNewTab()
-                            }
-                            true
-                        },
+            if (tabs.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "No open tabs",
+                        fontFamily = HankenGrotesk,
+                        fontSize = 16.sp,
+                        color = WarmCream.copy(alpha = 0.6f),
                     )
-
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        backgroundContent = {
-                            val bgColor by animateColorAsState(
-                                targetValue = when (dismissState.targetValue) {
-                                    SwipeToDismissBoxValue.Settled -> Color.Transparent
-                                    else -> Color(0xFFB02020).copy(alpha = 0.85f)
-                                },
-                                label = "swipe_bg",
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(bgColor, TabCardShape)
-                                    .padding(horizontal = 24.dp),
-                                contentAlignment = Alignment.CenterEnd,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Delete,
-                                    contentDescription = "Close tab",
-                                    tint = Color.White,
-                                )
-                            }
-                        },
-                        enableDismissFromStartToEnd = false,
-                        enableDismissFromEndToStart = true,
-                    ) {
-                        TabCard(
-                            title = title,
-                            url = currentUrl,
-                            onClick = onSelectTab,
-                            onClose = onNewTab,
-                        )
-                    }
                 }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(tabs, key = { it.id }) { tab ->
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = { value ->
+                                if (value != SwipeToDismissBoxValue.Settled) {
+                                    onCloseTab(tab.id)
+                                }
+                                true
+                            },
+                        )
 
-                item { Spacer(Modifier.height(16.dp)) }
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            backgroundContent = {
+                                val bgColor by animateColorAsState(
+                                    targetValue = when (dismissState.targetValue) {
+                                        SwipeToDismissBoxValue.Settled -> Color.Transparent
+                                        else -> Color(0xFFB02020).copy(alpha = 0.85f)
+                                    },
+                                    label = "swipe_bg",
+                                )
+                                // No icon — just the red background
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(bgColor, TabCardShape),
+                                )
+                            },
+                            enableDismissFromStartToEnd = false,
+                            enableDismissFromEndToStart = true,
+                        ) {
+                            TabCard(
+                                tab = tab,
+                                isActive = tab.id == TabManager.activeTabId,
+                                onClick = { onSelectTab(tab.id) },
+                                onClose = { onCloseTab(tab.id) },
+                            )
+                        }
+                    }
+
+                    item { Spacer(Modifier.height(16.dp)) }
+                }
             }
         }
     }
@@ -177,15 +188,19 @@ fun TabsScreen(
 
 @Composable
 private fun TabCard(
-    title: String,
-    url: String,
+    tab: BrowserTab,
+    isActive: Boolean,
     onClick: () -> Unit,
     onClose: () -> Unit,
 ) {
+    val title = tabDisplayTitle(tab)
     Surface(
         onClick = onClick,
         shape = TabCardShape,
-        color = Color.White.copy(alpha = 0.15f),
+        color = if (isActive)
+            Color.White.copy(alpha = 0.25f)
+        else
+            Color.White.copy(alpha = 0.15f),
         shadowElevation = 0.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -217,15 +232,15 @@ private fun TabCard(
                 Text(
                     text = title,
                     fontFamily = HankenGrotesk,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
                     fontSize = 15.sp,
                     color = WarmCream,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (url != "about:blank" && url.isNotBlank()) {
+                if (tab.url != "about:blank" && tab.url.isNotBlank()) {
                     Text(
-                        text = url,
+                        text = tab.url,
                         fontFamily = HankenGrotesk,
                         fontSize = 12.sp,
                         color = WarmCream.copy(alpha = 0.65f),

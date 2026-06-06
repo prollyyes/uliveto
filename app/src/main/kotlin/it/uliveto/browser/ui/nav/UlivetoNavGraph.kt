@@ -1,6 +1,5 @@
 package it.uliveto.browser.ui.nav
 
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -12,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import it.uliveto.browser.data.prefs.UserPreferences
 import it.uliveto.browser.di.AppContainer
 import it.uliveto.browser.di.ViewModelFactory
+import it.uliveto.browser.tabs.TabManager
 import it.uliveto.browser.ui.UlivetoTheme
 import it.uliveto.browser.ui.screens.bookmarks.BookmarksScreen
 import it.uliveto.browser.ui.screens.bookmarks.BookmarksViewModel
@@ -31,7 +31,6 @@ fun UlivetoNavGraph(
 ) {
     val navController = rememberNavController()
 
-    // Collect preferences at nav-graph level so theme + navStyle stay in sync app-wide
     val prefs by appContainer.userPrefsRepository.preferences.collectAsState(
         initial = UserPreferences(),
     )
@@ -50,20 +49,22 @@ fun UlivetoNavGraph(
                 StartScreen(
                     viewModel = startVm,
                     onNavigateToBrowser = { url ->
-                        navController.navigate("browser?url=${Uri.encode(url)}")
+                        val tab = TabManager.createTab(url, appContainer.geckoRuntime)
+                        navController.navigate("browser/${tab.id}")
                     },
                     onNavigateToTabs = { navController.navigate("tabs") },
                     onNavigateToBookmarks = { navController.navigate("bookmarks") },
                     onNavigateToSettings = { navController.navigate("settings") },
                 )
             }
-            composable("browser?url={url}") { backStackEntry ->
-                val url = backStackEntry.arguments?.getString("url") ?: "about:blank"
+
+            composable("browser/{tabId}") { backStackEntry ->
+                val tabId = backStackEntry.arguments?.getString("tabId") ?: return@composable
                 val browserVmFactory = ViewModelFactory { BrowserViewModel() }
                 BrowserScreen(
                     runtime = appContainer.geckoRuntime,
                     vmFactory = browserVmFactory,
-                    initialUrl = Uri.decode(url),
+                    tabId = tabId,
                     searchEngine = prefs.searchEngine,
                     customSearchEngineUrl = prefs.customSearchEngineUrl,
                     onNavigateToBookmarks = { navController.navigate("bookmarks") },
@@ -73,21 +74,28 @@ fun UlivetoNavGraph(
                     onNewTab = { navController.navigate("start") },
                 )
             }
+
             composable("tabs") {
-                val currentUrl = try {
-                    val rawUrl = navController.getBackStackEntry("browser?url={url}")
-                        .arguments?.getString("url") ?: ""
-                    if (rawUrl.isNotBlank()) Uri.decode(rawUrl) else "about:blank"
-                } catch (_: IllegalArgumentException) {
-                    "about:blank"
-                }
                 TabsScreen(
-                    currentUrl = currentUrl,
-                    onSelectTab = { navController.popBackStack() },
+                    onSelectTab = { tabId ->
+                        TabManager.setActiveTab(tabId)
+                        navController.navigate("browser/$tabId") {
+                            popUpTo("tabs") { inclusive = true }
+                        }
+                    },
+                    onCloseTab = { tabId ->
+                        TabManager.closeTab(tabId)
+                        if (TabManager.tabs.isEmpty()) {
+                            navController.navigate("start") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    },
                     onNewTab = { navController.navigate("start") },
                     onBack = { navController.popBackStack() },
                 )
             }
+
             composable("bookmarks") {
                 val bookmarksVmFactory = ViewModelFactory {
                     BookmarksViewModel(appContainer.bookmarksRepository)
@@ -95,11 +103,13 @@ fun UlivetoNavGraph(
                 BookmarksScreen(
                     viewModel = viewModel(factory = bookmarksVmFactory),
                     onOpenUrl = { url ->
-                        navController.navigate("browser?url=${Uri.encode(url)}")
+                        val tab = TabManager.createTab(url, appContainer.geckoRuntime)
+                        navController.navigate("browser/${tab.id}")
                     },
                     onBack = { navController.popBackStack() },
                 )
             }
+
             composable("settings") {
                 val settingsVmFactory = ViewModelFactory {
                     SettingsViewModel(appContainer.userPrefsRepository)
@@ -110,6 +120,7 @@ fun UlivetoNavGraph(
                     onNavigateToPrivacyReceipts = { navController.navigate("privacy-receipts") },
                 )
             }
+
             composable("privacy-receipts") {
                 PrivacyReceiptsScreen(
                     onBack = { navController.popBackStack() },
