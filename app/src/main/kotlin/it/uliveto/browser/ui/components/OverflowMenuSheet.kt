@@ -13,11 +13,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,15 +42,13 @@ private val SheetBackground = Color(0xFFF7F7F9).copy(alpha = 0.95f)
 @Composable
 fun OverflowMenuSheet(
     sheetState: SheetState,
-    isReaderAvailable: Boolean,
     isDesktopSite: Boolean = false,
     onNewTab: () -> Unit,
     onTabs: () -> Unit,
     onHome: () -> Unit,
-    onSettings: () -> Unit,
     onBookmarks: () -> Unit,
+    onSaveBookmark: () -> Unit,
     onShare: () -> Unit,
-    onReader: () -> Unit,
     onFind: () -> Unit,
     onDesktopSite: () -> Unit,
     onDismiss: () -> Unit,
@@ -67,6 +64,7 @@ fun OverflowMenuSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
+            // Row 1: navigation shortcuts
             Row(modifier = Modifier.fillMaxWidth()) {
                 OverflowItem(
                     icon = Icons.Filled.Add,
@@ -90,7 +88,14 @@ fun OverflowMenuSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Row 2: page actions
             Row(modifier = Modifier.fillMaxWidth()) {
+                OverflowItem(
+                    icon = Icons.Filled.BookmarkAdd,
+                    label = "Save",
+                    onClick = onSaveBookmark,
+                    modifier = Modifier.weight(1f),
+                )
                 OverflowItem(
                     icon = Icons.Filled.Bookmarks,
                     label = "Bookmarks",
@@ -103,22 +108,17 @@ fun OverflowMenuSheet(
                     onClick = onShare,
                     modifier = Modifier.weight(1f),
                 )
-                OverflowItem(
-                    icon = Icons.Filled.Settings,
-                    label = "Settings",
-                    onClick = onSettings,
-                    modifier = Modifier.weight(1f),
-                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Row 3: page tools
             Row(modifier = Modifier.fillMaxWidth()) {
                 OverflowItem(
                     icon = Icons.AutoMirrored.Filled.MenuBook,
                     label = "Reader",
-                    onClick = onReader,
-                    enabled = isReaderAvailable,
+                    onClick = { },
+                    enabled = false,
                     modifier = Modifier.weight(1f),
                 )
                 OverflowItem(
@@ -154,6 +154,7 @@ private fun OverflowItem(
             .clickable(enabled = enabled, onClick = onClick)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = icon,

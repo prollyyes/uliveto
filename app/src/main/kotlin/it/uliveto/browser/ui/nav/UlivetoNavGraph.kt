@@ -1,5 +1,10 @@
 package it.uliveto.browser.ui.nav
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,6 +44,10 @@ fun UlivetoNavGraph(
             navController = navController,
             startDestination = "start",
             modifier = modifier,
+            enterTransition = { fadeIn(animationSpec = tween(250)) },
+            exitTransition = { fadeOut(animationSpec = tween(250)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(250)) },
+            popExitTransition = { fadeOut(animationSpec = tween(250)) },
         ) {
             composable("start") {
                 val startVm: StartViewModel = viewModel(
@@ -64,9 +73,25 @@ fun UlivetoNavGraph(
                 )
             }
 
-            composable("browser/{tabId}") { backStackEntry ->
+            composable(
+                route = "browser/{tabId}",
+                enterTransition = {
+                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(280))
+                },
+                exitTransition = {
+                    slideOutHorizontally(targetOffsetX = { -it / 4 }, animationSpec = tween(280))
+                },
+                popEnterTransition = {
+                    slideInHorizontally(initialOffsetX = { -it / 4 }, animationSpec = tween(280))
+                },
+                popExitTransition = {
+                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(280))
+                },
+            ) { backStackEntry ->
                 val tabId = backStackEntry.arguments?.getString("tabId") ?: return@composable
-                val browserVmFactory = ViewModelFactory { BrowserViewModel() }
+                val browserVmFactory = ViewModelFactory {
+                    BrowserViewModel(appContainer.bookmarksRepository)
+                }
                 BrowserScreen(
                     runtime = appContainer.geckoRuntime,
                     vmFactory = browserVmFactory,
