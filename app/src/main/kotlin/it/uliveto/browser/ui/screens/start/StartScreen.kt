@@ -30,7 +30,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +45,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.uliveto.browser.ui.LocalUlivetoColors
 import it.uliveto.browser.ui.components.AddressField
 import it.uliveto.browser.ui.components.AddressFieldState
 import it.uliveto.browser.ui.components.EngineLine
@@ -54,6 +54,18 @@ import it.uliveto.browser.ui.tokens.InstrumentSerif
 import it.uliveto.browser.ui.tokens.PillShape
 import it.uliveto.browser.ui.tokens.WarmCream
 import kotlin.random.Random
+
+private val mediterraneanGreetings = listOf(
+    "Benvenuto",
+    "Buongiorno",
+    "Kalimera",
+    "Bienvenido",
+    "Bienvenue",
+    "Merhaba",
+    "Bon dia",
+    "Salve",
+    "Olá",
+)
 
 @Composable
 fun StartScreen(
@@ -65,14 +77,13 @@ fun StartScreen(
     modifier: Modifier = Modifier,
 ) {
     val prefs by viewModel.preferences.collectAsState()
-    var hasShownNamePrompt by rememberSaveable { mutableStateOf(false) }
+    // Use companion object flag so the dialog never re-appears on new-tab navigation
+    var hasShownNamePrompt by remember { mutableStateOf(StartViewModel.namePromptShown) }
     var showNameDialog by remember { mutableStateOf(false) }
     var addressExpanded by remember { mutableStateOf(false) }
 
     BackHandler(enabled = addressExpanded) { addressExpanded = false }
 
-
-    // Show name prompt once if name is blank; don't re-trigger on every recomposition
     LaunchedEffect(prefs.userName, hasShownNamePrompt) {
         if (prefs.userName.isBlank() && !hasShownNamePrompt) {
             showNameDialog = true
@@ -84,29 +95,33 @@ fun StartScreen(
             onConfirm = { name ->
                 if (name.isNotBlank()) viewModel.setUserName(name)
                 hasShownNamePrompt = true
+                StartViewModel.namePromptShown = true
                 showNameDialog = false
             },
             onDismiss = {
                 hasShownNamePrompt = true
+                StartViewModel.namePromptShown = true
                 showNameDialog = false
             },
         )
     }
 
-    val terracottaGradient = remember {
-        Brush.radialGradient(
-            colors = listOf(
-                Color(0xFFB25737),
-                Color(0xFF9D4626),
-                Color(0xFF7E3415),
-            ),
-        )
+    val ulivetoColors = LocalUlivetoColors.current
+    val themeGradient = remember(ulivetoColors) {
+        Brush.radialGradient(ulivetoColors.gradientColors)
     }
+
+    // Rotate greeting daily; stable within the day
+    val greetingWord = remember {
+        val dayOfYear = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR)
+        mediterraneanGreetings[dayOfYear % mediterraneanGreetings.size]
+    }
+    val greeting = if (prefs.userName.isBlank()) greetingWord else "$greetingWord, ${prefs.userName}"
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(brush = terracottaGradient)
+            .background(brush = themeGradient)
             // 4%-opacity grain overlay pre-rendered into an ImageBitmap — no PNG texture
             .drawWithCache {
                 val w = size.width.toInt().coerceAtLeast(1)
@@ -140,7 +155,6 @@ fun StartScreen(
         ) {
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Engine line
             EngineLine(
                 engine = prefs.searchEngine,
                 onEngineSelected = { viewModel.setSearchEngine(it) },
@@ -148,8 +162,6 @@ fun StartScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Welcome greeting
-            val greeting = if (prefs.userName.isBlank()) "Welcome" else "Welcome, ${prefs.userName}"
             Text(
                 text = greeting,
                 style = TextStyle(
@@ -181,7 +193,6 @@ fun StartScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Bottom frosted pill bar
             BottomNavBar(
                 onTabsClick = onNavigateToTabs,
                 onBookmarksClick = onNavigateToBookmarks,
@@ -193,7 +204,6 @@ fun StartScreen(
             )
         }
 
-        // Expanded address overlay — rendered at Box level so it covers the full screen
         if (addressExpanded) {
             AddressField(
                 state = AddressFieldState.Expanded,
@@ -288,23 +298,23 @@ private fun NamePromptDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("What's your name?") },
+        title = { Text("What's your name?", fontFamily = InstrumentSerif, fontSize = 20.sp) },
         text = {
             OutlinedTextField(
                 value = nameInput,
                 onValueChange = { nameInput = it },
-                label = { Text("Your name") },
+                label = { Text("Your name", fontFamily = HankenGrotesk) },
                 singleLine = true,
             )
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(nameInput.trim()) }) {
-                Text("Let's go")
+                Text("Let's go", fontFamily = HankenGrotesk)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Skip")
+                Text("Skip", fontFamily = HankenGrotesk)
             }
         },
     )

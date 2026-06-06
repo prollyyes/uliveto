@@ -27,9 +27,9 @@ class UserPrefsRepository(context: Context) {
                 },
                 userName = prefs[Keys.USER_NAME] ?: "",
                 theme = try {
-                    AppTheme.valueOf(prefs[Keys.THEME] ?: AppTheme.Light.name)
+                    AppTheme.valueOf(prefs[Keys.THEME] ?: AppTheme.Terracotta.name)
                 } catch (_: IllegalArgumentException) {
-                    AppTheme.Light
+                    AppTheme.Terracotta
                 },
                 navStyle = try {
                     NavStyle.valueOf(prefs[Keys.NAV_STYLE] ?: NavStyle.Hourglass.name)

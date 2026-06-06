@@ -5,10 +5,10 @@ import it.uliveto.browser.domain.SearchEngine
 data class UserPreferences(
     val searchEngine: SearchEngine = SearchEngine.DuckDuckGo,
     val userName: String = "",
-    val theme: AppTheme = AppTheme.Light,
+    val theme: AppTheme = AppTheme.Terracotta,
     val navStyle: NavStyle = NavStyle.Hourglass,
     val safeBrowsingEnabled: Boolean = false,
 )
 
-enum class AppTheme { Light, Dark, OledBlack, FollowSystem }
+enum class AppTheme { Terracotta, Aegean, OliveGrove, Amalfi, Santorini, Night, System }
 enum class NavStyle { Hourglass, Classic }

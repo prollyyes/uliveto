@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -39,11 +38,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import it.uliveto.browser.data.prefs.NavStyle
 import it.uliveto.browser.ui.components.AddressField
 import it.uliveto.browser.ui.components.AddressFieldState
-import it.uliveto.browser.ui.components.ClassicBottomBar
-import it.uliveto.browser.ui.components.ClassicTopBar
 import it.uliveto.browser.ui.components.FindInPageBar
 import it.uliveto.browser.ui.components.SimpleNavBar
 import it.uliveto.browser.ui.components.OverflowMenuSheet
@@ -64,7 +60,6 @@ fun BrowserScreen(
     runtime: GeckoRuntime,
     vmFactory: ViewModelProvider.Factory,
     initialUrl: String = "about:blank",
-    navStyle: NavStyle = NavStyle.Hourglass,
     onNavigateToBookmarks: () -> Unit = {},
     onNavigateToTabs: () -> Unit = {},
     onNewTab: () -> Unit = {},
@@ -199,15 +194,6 @@ fun BrowserScreen(
                 ),
         )
 
-        // ── Classic top bar ───────────────────────────────────────────────────
-        if (navStyle == NavStyle.Classic) {
-            ClassicTopBar(
-                currentUrl = currentUrl,
-                onAddressTap = { addressExpanded = true },
-                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding(),
-            )
-        }
-
         // ── Find-in-page bar — shown above chrome when active ─────────────────
         if (showFindInPage) {
             FindInPageBar(
@@ -225,19 +211,8 @@ fun BrowserScreen(
             )
         }
 
-        // ── Bottom chrome: Hourglass or Classic ───────────────────────────────
-        if (navStyle == NavStyle.Classic) {
-            ClassicBottomBar(
-                canGoBack = canGoBack,
-                canGoForward = canGoForward,
-                onBack = { session.goBack() },
-                onForward = { session.goForward() },
-                onHome = onNewTab,
-                onTabs = onNavigateToTabs,
-                onMenu = { showOverflow = true },
-                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding(),
-            )
-        } else {
+        // ── Bottom chrome ─────────────────────────────────────────────────────
+        if (!addressExpanded) {
             SimpleNavBar(
                 currentUrl = currentUrl,
                 canGoBack = canGoBack,

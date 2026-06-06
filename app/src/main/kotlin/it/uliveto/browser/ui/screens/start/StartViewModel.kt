@@ -36,4 +36,10 @@ class StartViewModel(private val prefsRepository: UserPrefsRepository) : ViewMod
     fun setSafeBrowsingEnabled(enabled: Boolean) {
         viewModelScope.launch { prefsRepository.setSafeBrowsingEnabled(enabled) }
     }
+
+    companion object {
+        // Process-scoped flag so the name dialog never re-appears on new-tab navigation
+        @Volatile
+        var namePromptShown = false
+    }
 }
