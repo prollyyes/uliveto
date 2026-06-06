@@ -1,6 +1,7 @@
 package it.uliveto.browser.ui.screens.browser
 
 import android.content.Intent
+import android.view.ViewGroup
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -36,7 +37,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -54,8 +55,10 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import it.uliveto.browser.domain.SearchEngine
 import it.uliveto.browser.tabs.TabManager
+import it.uliveto.browser.ui.LocalUlivetoColors
 import it.uliveto.browser.ui.components.AddressField
 import it.uliveto.browser.ui.components.AddressFieldState
 import it.uliveto.browser.ui.components.FindInPageBar
@@ -85,10 +88,15 @@ fun BrowserScreen(
     onNewTab: () -> Unit = {},
 ) {
     val viewModel: BrowserViewModel = viewModel(factory = vmFactory)
-
     val context = LocalContext.current
     val view = LocalView.current
     val density = LocalDensity.current
+
+    // Capture theme accent for the SwipeRefreshLayout spinner
+    val ulivetoColors = LocalUlivetoColors.current
+    val swipeAccentArgb = remember(ulivetoColors) {
+        ulivetoColors.gradientColors.firstOrNull()?.toArgb() ?: Color(0xFFB25737).toArgb()
+    }
 
     SideEffect {
         WindowInsetsControllerCompat(
@@ -119,10 +127,18 @@ fun BrowserScreen(
     var isDesktopSite by remember { mutableStateOf(false) }
     var bookmarkJustSaved by remember { mutableStateOf(false) }
 
-    // Chrome scroll animation — driven by GeckoSession.ScrollDelegate
+    // Pull-to-refresh state
+    var isPullRefreshing by remember { mutableStateOf(false) }
+
+    // Stable int array shared between scroll delegate and SwipeRefreshLayout child callback.
+    // [0] = current scrollY for "can scroll up?" check
+    // [1] = previous scrollY for chrome-hide delta computation
+    // Using intArrayOf rather than mutableIntStateOf avoids triggering recomposition on scroll.
+    val scrollYRef = remember { intArrayOf(0, 0) }
+
+    // Chrome animation — driven by GeckoSession.ScrollDelegate
     val chromeHeightPx = with(density) { 120.dp.toPx() }
     var chromeOffsetY by remember { mutableFloatStateOf(0f) }
-    var lastScrollY by remember { mutableIntStateOf(0) }
 
     val animatedTranslationY by animateFloatAsState(
         targetValue = -chromeOffsetY,
@@ -130,6 +146,13 @@ fun BrowserScreen(
         label = "chrome_hide",
     )
     val animatedChromeAlpha = (1f - animatedTranslationY / chromeHeightPx).coerceIn(0f, 1f)
+
+    // Dismiss pull-refresh spinner once the page finishes loading
+    LaunchedEffect(isLoading) {
+        if (!isLoading && isPullRefreshing) {
+            isPullRefreshing = false
+        }
+    }
 
     // Bookmark toast auto-dismiss
     LaunchedEffect(bookmarkJustSaved) {
@@ -148,13 +171,8 @@ fun BrowserScreen(
 
     DisposableEffect(session) {
         session.setProgressDelegate(object : GeckoSession.ProgressDelegate {
-            override fun onPageStart(session: GeckoSession, url: String) {
-                setIsLoading(true)
-            }
-
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                setIsLoading(false)
-            }
+            override fun onPageStart(session: GeckoSession, url: String) = setIsLoading(true)
+            override fun onPageStop(session: GeckoSession, success: Boolean) = setIsLoading(false)
         })
 
         session.setNavigationDelegate(object : GeckoSession.NavigationDelegate {
@@ -168,14 +186,8 @@ fun BrowserScreen(
                 setCurrentUrl(resolved)
                 TabManager.updateTab(tabId, url = resolved)
             }
-
-            override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
-                setCanGoBack(canGoBack)
-            }
-
-            override fun onCanGoForward(session: GeckoSession, canGoForward: Boolean) {
-                setCanGoForward(canGoForward)
-            }
+            override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) = setCanGoBack(canGoBack)
+            override fun onCanGoForward(session: GeckoSession, canGoForward: Boolean) = setCanGoForward(canGoForward)
         })
 
         session.setScrollDelegate(object : GeckoSession.ScrollDelegate {
@@ -183,11 +195,12 @@ fun BrowserScreen(
                 chromeOffsetY = when {
                     scrollY == 0 -> 0f
                     else -> {
-                        val delta = scrollY - lastScrollY
+                        val delta = scrollY - scrollYRef[1]
                         (chromeOffsetY - delta.toFloat()).coerceIn(-chromeHeightPx, 0f)
                     }
                 }
-                lastScrollY = scrollY
+                scrollYRef[0] = scrollY  // for SwipeRefreshLayout child check
+                scrollYRef[1] = scrollY  // for next delta computation
             }
         })
 
@@ -211,16 +224,48 @@ fun BrowserScreen(
     BackHandler(enabled = canGoBack) { session.goBack() }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // GeckoView fills the entire screen. loadUri is called inside the factory — right
-        // after setSession — so the load begins in the same frame the view is created,
-        // eliminating the one-frame blank delay from deferring to DisposableEffect.
+        // SwipeRefreshLayout wraps GeckoView so pull-to-refresh can intercept touches at
+        // the View level — GeckoView eats all MotionEvents so Compose NestedScroll never
+        // fires. SwipeRefreshLayout.onInterceptTouchEvent() runs before GeckoView and
+        // correctly captures the overscroll gesture when the page is at the top.
         androidx.compose.ui.viewinterop.AndroidView(
             factory = { ctx ->
-                GeckoView(ctx).apply {
+                val geckoView = GeckoView(ctx).apply {
                     setSession(session)
+                    // Load immediately after setSession so there is no blank-frame delay
                     val url = TabManager.consumeInitialUrl(tabId)
                     if (url != null) session.loadUri(url)
                 }
+                // Subclass so canChildScrollUp() uses the tracked GeckoView scroll position.
+                // SwipeRefreshLayout calls this before intercepting touches — if it returns
+                // true the layout assumes the child can still scroll up and passes the event
+                // through instead of triggering the refresh indicator.
+                object : SwipeRefreshLayout(ctx) {
+                    override fun canChildScrollUp() = scrollYRef[0] > 0
+                }.apply {
+                    addView(
+                        geckoView,
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        ),
+                    )
+                    // Mediterranean theme: WarmCream background, accent spinner
+                    setProgressBackgroundColorSchemeColor(WarmCream.toArgb())
+                    setColorSchemeColors(swipeAccentArgb)
+                    setOnRefreshListener {
+                        isPullRefreshing = true
+                        // Reset scroll tracking so chrome re-appears immediately after refresh
+                        scrollYRef[0] = 0
+                        scrollYRef[1] = 0
+                        chromeOffsetY = 0f
+                        session.reload()
+                    }
+                }
+            },
+            update = { view ->
+                // Sync the spinner with our refresh state on every recomposition
+                (view as SwipeRefreshLayout).isRefreshing = isPullRefreshing
             },
             modifier = Modifier.fillMaxSize(),
         )
@@ -238,8 +283,9 @@ fun BrowserScreen(
                 ),
         )
 
-        // Loading progress bar — thin WarmCream line just below the status scrim
-        if (isLoading) {
+        // Thin progress bar — only for navigation-driven loads (URL bar, new tab, links).
+        // Hidden during pull-to-refresh because SwipeRefreshLayout's spinner already signals it.
+        if (isLoading && !isPullRefreshing) {
             LinearProgressIndicator(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -269,7 +315,7 @@ fun BrowserScreen(
             )
         }
 
-        // Bottom chrome — hidden while find-in-page is active, slides away on scroll-down
+        // Bottom chrome — slides away on scroll-down, hides during find-in-page / address mode
         if (!addressExpanded && !showFindInPage) {
             SimpleNavBar(
                 currentUrl = currentUrl,
