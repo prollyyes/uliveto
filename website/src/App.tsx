@@ -2,6 +2,7 @@ import { Hero } from './components/Hero';
 import { InteractiveBrowserMockup } from './components/InteractiveBrowserMockup';
 import { ZeroTelemetrySection } from './components/ZeroTelemetrySection';
 import { FeaturesGrid } from './components/FeaturesGrid';
+import { FerrofluidParticles } from './components/FerrofluidParticles';
 
 function App() {
   const scrollToMockup = () => {
@@ -12,7 +13,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121214] text-slate-100 flex flex-col selection:bg-[#b25737]/30 selection:text-white">
+    <div className="min-h-screen bg-[#121214] text-slate-100 flex flex-col selection:bg-[#b25737]/30 selection:text-white relative overflow-hidden">
+      {/* Global Interactive Background Ferrofluid Particles */}
+      <FerrofluidParticles />
+
       {/* Hero Section */}
       <Hero onExploreMockup={scrollToMockup} />
 

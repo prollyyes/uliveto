@@ -8,12 +8,9 @@ interface HeroProps {
 export const Hero: React.FC<HeroProps> = ({ onExploreMockup }) => {
   return (
     <header className="relative w-full overflow-hidden pt-12 pb-24 md:pt-20 md:pb-36 bg-radial-[at_top] from-[#4a5c25]/30 via-[#121214] to-[#121214]">
-      {/* Decorative Warm Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[400px] bg-gradient-to-b from-[#b25737]/15 to-transparent blur-3xl pointer-events-none" />
-
       <div className="max-w-6xl mx-auto px-6 relative z-10 flex flex-col items-center text-center">
         {/* Nav Bar */}
-        <nav className="w-full flex items-center justify-between mb-16 md:mb-24">
+        <nav className="w-full flex items-center justify-between mb-8 md:mb-12">
           <div className="flex items-center gap-3">
             <img 
               src="/logo.svg" 
@@ -41,17 +38,17 @@ export const Hero: React.FC<HeroProps> = ({ onExploreMockup }) => {
 
         {/* 3D Rotating Main Logo (WebGL Extruded Chrome Model) */}
         <div 
-          className="relative w-44 h-44 md:w-56 md:h-56 mb-10 group cursor-pointer flex items-center justify-center" 
+          className="relative w-44 h-44 md:w-60 md:h-60 -translate-y-12 md:-translate-y-16 mb-24 md:mb-32 group cursor-pointer flex items-center justify-center" 
           onClick={onExploreMockup}
         >
-          {/* Outer Glow */}
-          <div className="absolute inset-0 bg-[#b25737]/15 rounded-full blur-3xl group-hover:bg-[#b25737]/25 transition-all duration-500" />
+          {/* Main Immersive Background Glow - Centered exactly behind the logo branch */}
+          <div className="absolute w-[280px] h-[280px] md:w-[480px] md:h-[480px] bg-gradient-to-tr from-[#b25737]/25 via-[#4a5c25]/15 to-[#1a5e8f]/20 rounded-full blur-3xl pointer-events-none -z-10 animate-slow-spin" style={{ animationDuration: '45s' }} />
+
+          {/* Secondary central dark glow for legibility of chrome details */}
+          <div className="absolute w-28 h-28 md:w-36 md:h-36 bg-[#121214]/65 rounded-full blur-xl pointer-events-none" />
           
-          {/* Circular Glass frame backdrop */}
-          <div className="absolute inset-0 rounded-full border border-slate-800/30 bg-slate-950/20 glass-surface shadow-2xl pointer-events-none" />
-          
-          {/* ThreeDLogo Canvas container */}
-          <div className="relative w-36 h-36 md:w-44 md:h-44 z-10">
+          {/* ThreeDLogo Canvas container (Enlarged size) */}
+          <div className="relative w-40 h-40 md:w-52 md:h-52 z-10">
             <ThreeDLogo />
           </div>
         </div>
