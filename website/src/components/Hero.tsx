@@ -1,4 +1,5 @@
 import React from 'react';
+import { ThreeDLogo } from './ThreeDLogo';
 
 interface HeroProps {
   onExploreMockup: () => void;
@@ -38,74 +39,20 @@ export const Hero: React.FC<HeroProps> = ({ onExploreMockup }) => {
           </div>
         </nav>
 
-        {/* 3D Rotating Main Logo */}
+        {/* 3D Rotating Main Logo (WebGL Extruded Chrome Model) */}
         <div 
-          className="relative mb-10 group cursor-pointer" 
+          className="relative w-44 h-44 md:w-56 md:h-56 mb-10 group cursor-pointer flex items-center justify-center" 
           onClick={onExploreMockup}
-          style={{ perspective: '1000px' }}
         >
-          {/* Outer glow */}
-          <div className="absolute inset-0 bg-[#b25737]/20 rounded-full blur-3xl group-hover:bg-[#b25737]/35 transition-all duration-500" />
+          {/* Outer Glow */}
+          <div className="absolute inset-0 bg-[#b25737]/15 rounded-full blur-3xl group-hover:bg-[#b25737]/25 transition-all duration-500" />
           
-          {/* 3D Medallion Card spinning on Y axis */}
-          <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full border border-slate-800/40 glass-surface flex items-center justify-center animate-rotate-y shadow-2xl">
-            
-            {/* Front Face: Shiny Bronze finish */}
-            <div 
-              className="absolute inset-0 p-8 flex items-center justify-center rounded-full overflow-hidden"
-              style={{ transform: 'translateZ(6px)', backfaceVisibility: 'visible' }}
-            >
-              {/* SPECULAR SHINE LAYER */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent w-[300%] h-[300%] -translate-x-[100%] -translate-y-[100%] rotate-45 animate-shine pointer-events-none" />
-              
-              {/* Logo branch SVG with bronze/gold gradient applied through CSS filter */}
-              <img 
-                src="/logo.svg" 
-                alt="Uliveto 3D Bronze Medallion Logo Front" 
-                className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
-                style={{ 
-                  filter: 'sepia(0.6) saturate(2.5) hue-rotate(340deg) brightness(0.95) contrast(1.3) drop-shadow(0px 2px 4px rgba(0,0,0,0.4))'
-                }}
-              />
-            </div>
-
-            {/* Thickness Layers (extrusion effect created by sandwiching layers on Z-axis) */}
-            {[...Array(5)].map((_, i) => (
-              <div 
-                key={i}
-                className="absolute inset-0 p-8 flex items-center justify-center rounded-full opacity-60"
-                style={{ 
-                  transform: `translateZ(${i - 2}px)`, 
-                  backfaceVisibility: 'visible',
-                  pointerEvents: 'none'
-                }}
-              >
-                <img 
-                  src="/logo.svg" 
-                  alt="" 
-                  className="w-full h-full object-contain"
-                  style={{ 
-                    filter: 'sepia(0.9) saturate(1.5) hue-rotate(330deg) brightness(0.3) contrast(1.5)'
-                  }}
-                />
-              </div>
-            ))}
-
-            {/* Back Face (when it spins around) */}
-            <div 
-              className="absolute inset-0 p-8 flex items-center justify-center rounded-full bg-slate-950/80 border border-[#7e3415]/20"
-              style={{ transform: 'translateZ(-6px) rotateY(180deg)', backfaceVisibility: 'visible' }}
-            >
-              <img 
-                src="/logo.svg" 
-                alt="Uliveto 3D Bronze Medallion Logo Back" 
-                className="w-full h-full object-contain opacity-45 scale-x-[-1]"
-                style={{ 
-                  filter: 'sepia(0.8) saturate(1.8) hue-rotate(340deg) brightness(0.5) contrast(1.1)'
-                }}
-              />
-            </div>
-            
+          {/* Circular Glass frame backdrop */}
+          <div className="absolute inset-0 rounded-full border border-slate-800/30 bg-slate-950/20 glass-surface shadow-2xl pointer-events-none" />
+          
+          {/* ThreeDLogo Canvas container */}
+          <div className="relative w-36 h-36 md:w-44 md:h-44 z-10">
+            <ThreeDLogo />
           </div>
         </div>
 
