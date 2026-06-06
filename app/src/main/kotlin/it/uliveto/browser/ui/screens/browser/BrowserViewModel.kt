@@ -1,22 +1,13 @@
 package it.uliveto.browser.ui.screens.browser
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import it.uliveto.browser.data.bookmarks.BookmarksRepository
+import kotlinx.coroutines.launch
 
-/**
- * Holds transient UI state for [BrowserScreen].
- *
- * In M1 this is minimal — just the URL bar text.
- * Session / tab management moves to AC BrowserStore in M2.
- */
-class BrowserViewModel : ViewModel() {
+class BrowserViewModel(private val bookmarksRepo: BookmarksRepository) : ViewModel() {
 
-    private val _urlText = MutableStateFlow("")
-    val urlText: StateFlow<String> = _urlText.asStateFlow()
-
-    fun onUrlTextChanged(value: String) {
-        _urlText.value = value
+    fun saveBookmark(url: String, title: String) = viewModelScope.launch {
+        bookmarksRepo.add(url, title)
     }
 }
