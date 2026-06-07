@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -50,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -60,6 +63,7 @@ import it.uliveto.browser.data.prefs.NavStyle
 import it.uliveto.browser.ui.components.EngineLine
 import it.uliveto.browser.ui.tokens.HankenGrotesk
 import it.uliveto.browser.ui.tokens.InstrumentSerif
+import it.uliveto.browser.ui.tokens.WarmCream
 
 // (theme, display label, swatch color)
 private val themeSwatches = listOf(
@@ -383,6 +387,112 @@ private fun SectionHeader(title: String) {
         fontWeight = FontWeight.Normal,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+    )
+}
+
+@Composable
+private fun SectionLabel(title: String) {
+    Text(
+        text = title.uppercase(),
+        fontFamily = HankenGrotesk,
+        fontSize = 9.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 1.4.sp,
+        color = WarmCream.copy(alpha = 0.28f),
+        modifier = Modifier.padding(start = 2.dp, bottom = 6.dp),
+    )
+}
+
+@Composable
+private fun GlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(WarmCream.copy(alpha = 0.065f))
+            .border(
+                width = 1.dp,
+                color = WarmCream.copy(alpha = 0.13f),
+                shape = RoundedCornerShape(16.dp),
+            ),
+        content = content,
+    )
+}
+
+@Composable
+private fun SettingRow(
+    label: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    value: String? = null,
+    showArrow: Boolean = false,
+    trailing: @Composable (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+) {
+    val rowModifier = modifier
+        .fillMaxWidth()
+        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+        .padding(horizontal = 14.dp, vertical = 11.dp)
+
+    Row(
+        modifier = rowModifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                fontFamily = HankenGrotesk,
+                fontWeight = FontWeight.Medium,
+                fontSize = 13.sp,
+                color = WarmCream.copy(alpha = 0.90f),
+                lineHeight = 17.sp,
+            )
+            if (subtitle != null) {
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    text = subtitle,
+                    fontFamily = HankenGrotesk,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 9.sp,
+                    color = WarmCream.copy(alpha = 0.40f),
+                    lineHeight = 13.sp,
+                )
+            }
+        }
+        if (value != null) {
+            Text(
+                text = value,
+                fontFamily = InstrumentSerif,
+                fontStyle = FontStyle.Italic,
+                fontSize = 12.sp,
+                color = WarmCream.copy(alpha = 0.52f),
+                modifier = Modifier.padding(end = if (showArrow) 4.dp else 0.dp),
+            )
+        }
+        if (trailing != null) {
+            trailing()
+        }
+        if (showArrow) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = WarmCream.copy(alpha = 0.22f),
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(14.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(
+        thickness = 0.5.dp,
+        color = WarmCream.copy(alpha = 0.07f),
     )
 }
 
