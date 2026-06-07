@@ -1,10 +1,15 @@
 package it.uliveto.browser.ui.nav
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,10 +49,20 @@ fun UlivetoNavGraph(
             navController = navController,
             startDestination = "start",
             modifier = modifier,
-            enterTransition = { fadeIn(animationSpec = tween(250)) },
-            exitTransition = { fadeOut(animationSpec = tween(250)) },
-            popEnterTransition = { fadeIn(animationSpec = tween(250)) },
-            popExitTransition = { fadeOut(animationSpec = tween(250)) },
+            enterTransition = {
+                slideInVertically(initialOffsetY = { it / 8 }, animationSpec = tween(300)) +
+                fadeIn(animationSpec = tween(300))
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(220))
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(220))
+            },
+            popExitTransition = {
+                slideOutVertically(targetOffsetY = { it / 8 }, animationSpec = tween(220)) +
+                fadeOut(animationSpec = tween(220))
+            },
         ) {
             composable("start") {
                 val startVm: StartViewModel = viewModel(
@@ -76,16 +91,20 @@ fun UlivetoNavGraph(
             composable(
                 route = "browser/{tabId}",
                 enterTransition = {
-                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(280))
+                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                    scaleIn(initialScale = 0.97f, animationSpec = tween(280, easing = FastOutSlowInEasing))
                 },
                 exitTransition = {
-                    slideOutHorizontally(targetOffsetX = { -it / 4 }, animationSpec = tween(280))
+                    slideOutHorizontally(targetOffsetX = { -it / 4 }, animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                    scaleOut(targetScale = 0.97f, animationSpec = tween(280, easing = FastOutSlowInEasing))
                 },
                 popEnterTransition = {
-                    slideInHorizontally(initialOffsetX = { -it / 4 }, animationSpec = tween(280))
+                    slideInHorizontally(initialOffsetX = { -it / 4 }, animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                    scaleIn(initialScale = 0.97f, animationSpec = tween(280, easing = FastOutSlowInEasing))
                 },
                 popExitTransition = {
-                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(280))
+                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                    scaleOut(targetScale = 0.97f, animationSpec = tween(280, easing = FastOutSlowInEasing))
                 },
             ) { backStackEntry ->
                 val tabId = backStackEntry.arguments?.getString("tabId") ?: return@composable
