@@ -363,12 +363,12 @@ fun StartScreen(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() },
                     ) {
-                        gestureState = GestureState.Rest
                         scope.launch {
                             dragOffsetY.animateTo(
                                 targetValue = 0f,
                                 animationSpec = spring(dampingRatio = 0.72f, stiffness = 480f),
                             )
+                            gestureState = GestureState.Rest
                         }
                     },
             )
