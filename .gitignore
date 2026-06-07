@@ -19,3 +19,4 @@ captures/
 *.keystore
 *.jks
 keystore.properties
+.superpowers/
