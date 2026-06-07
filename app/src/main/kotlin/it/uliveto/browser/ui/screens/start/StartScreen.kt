@@ -1,8 +1,18 @@
 package it.uliveto.browser.ui.screens.start
 
+import android.view.HapticFeedbackConstants
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
@@ -23,13 +34,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,9 +53,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.uliveto.browser.ui.LocalUlivetoColors
@@ -53,7 +75,23 @@ import it.uliveto.browser.ui.tokens.HankenGrotesk
 import it.uliveto.browser.ui.tokens.InstrumentSerif
 import it.uliveto.browser.ui.tokens.PillShape
 import it.uliveto.browser.ui.tokens.WarmCream
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.random.Random
+import kotlinx.coroutines.launch
+
+private sealed interface GestureState {
+    data object Rest : GestureState
+    data object Dragging : GestureState
+    data object Committed : GestureState
+}
+
+internal fun shouldCommitGesture(
+    offsetPx: Float,
+    velocityPx: Float,
+    thresholdPx: Float,
+    velocityThresholdPxPerSec: Float = 900f,
+): Boolean = offsetPx >= thresholdPx || velocityPx >= velocityThresholdPxPerSec
 
 private val mediterraneanGreetings = listOf(
     "Benvenuto",
@@ -81,6 +119,31 @@ fun StartScreen(
     var hasShownNamePrompt by remember { mutableStateOf(StartViewModel.namePromptShown) }
     var showNameDialog by remember { mutableStateOf(false) }
     var addressExpanded by remember { mutableStateOf(false) }
+    var gestureState: GestureState by remember { mutableStateOf(GestureState.Rest) }
+    val dragOffsetY = remember { Animatable(0f) }
+    var pillNaturalY by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val view = LocalView.current
+
+    val thresholdPx = with(density) { 120.dp.toPx() }
+    val windowHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val targetCommitOffsetPx by remember(pillNaturalY, windowHeight) {
+        derivedStateOf { windowHeight * 0.45f - pillNaturalY }
+    }
+    val blurAlpha by animateFloatAsState(
+        targetValue = when (gestureState) {
+            GestureState.Rest -> 0f
+            GestureState.Dragging -> (dragOffsetY.value / thresholdPx).coerceIn(0f, 0.6f)
+            GestureState.Committed -> 1f
+        },
+        animationSpec = when (gestureState) {
+            GestureState.Rest -> tween(220, easing = FastOutSlowInEasing)
+            GestureState.Committed -> tween(300, easing = FastOutSlowInEasing)
+            else -> snap()
+        },
+        label = "blurAlpha",
+    )
 
     BackHandler(enabled = addressExpanded) { addressExpanded = false }
 
@@ -174,22 +237,14 @@ fun StartScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            if (!addressExpanded) {
-                AddressField(
-                    state = AddressFieldState.Pill,
-                    searchEngine = prefs.searchEngine,
-                    customSearchEngineUrl = prefs.customSearchEngineUrl,
-                    onSubmit = { url ->
-                        onNavigateToBrowser(url)
-                        addressExpanded = false
+            Spacer(
+                modifier = Modifier
+                    .height(52.dp)
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coords ->
+                        pillNaturalY = coords.positionInRoot().y.roundToInt()
                     },
-                    onDismiss = { addressExpanded = false },
-                    onPillTap = { addressExpanded = true },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            } else {
-                Spacer(modifier = Modifier.height(52.dp))
-            }
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -201,6 +256,38 @@ fun StartScreen(
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(bottom = 16.dp),
+            )
+        }
+
+        // Pill overlay — rendered above content, managed by gesture system
+        if (!addressExpanded) {
+            AddressField(
+                state = when (gestureState) {
+                    GestureState.Committed -> AddressFieldState.GestureFocused
+                    else -> AddressFieldState.Pill
+                },
+                searchEngine = prefs.searchEngine,
+                customSearchEngineUrl = prefs.customSearchEngineUrl,
+                onSubmit = { url ->
+                    onNavigateToBrowser(url)
+                    gestureState = GestureState.Rest
+                    scope.launch { dragOffsetY.snapTo(0f) }
+                },
+                onDismiss = {
+                    gestureState = GestureState.Rest
+                    scope.launch {
+                        dragOffsetY.animateTo(
+                            targetValue = 0f,
+                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 480f),
+                        )
+                    }
+                },
+                onPillTap = { addressExpanded = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .offset { IntOffset(0, pillNaturalY + dragOffsetY.value.roundToInt()) }
+                    .align(Alignment.TopStart),
             )
         }
 
