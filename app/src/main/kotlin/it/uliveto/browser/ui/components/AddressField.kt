@@ -64,7 +64,7 @@ import it.uliveto.browser.ui.tokens.HankenGrotesk
 import it.uliveto.browser.ui.tokens.PillShape
 import it.uliveto.browser.ui.tokens.WarmCream
 
-enum class AddressFieldState { Pill, HourglassCenter, Expanded }
+enum class AddressFieldState { Pill, HourglassCenter, Expanded, GestureFocused }
 
 @Composable
 fun AddressField(
@@ -107,6 +107,14 @@ fun AddressField(
                 customSearchEngineUrl = customSearchEngineUrl,
                 onSubmit = onSubmit,
                 onDismiss = onDismiss,
+            )
+
+            AddressFieldState.GestureFocused -> GestureFocusedState(
+                searchEngine = searchEngine,
+                customSearchEngineUrl = customSearchEngineUrl,
+                onSubmit = onSubmit,
+                onDismiss = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -154,6 +162,81 @@ private fun PillState(
             )
         }
     }
+}
+
+// ── GestureFocused state ──────────────────────────────────────────────────
+
+@Composable
+private fun GestureFocusedState(
+    searchEngine: SearchEngine,
+    customSearchEngineUrl: String,
+    onSubmit: (String) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var text by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+
+    BackHandler(enabled = true) { onDismiss() }
+
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    BasicTextField(
+        value = text,
+        onValueChange = { text = it },
+        singleLine = true,
+        textStyle = TextStyle(
+            fontFamily = HankenGrotesk,
+            fontWeight = FontWeight.Normal,
+            fontSize = 15.sp,
+            color = WarmCream,
+        ),
+        cursorBrush = SolidColor(WarmCream),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(
+            onSearch = {
+                if (text.isNotBlank()) {
+                    val url = UrlClassifier.buildNavigationUrl(text, searchEngine, customSearchEngineUrl)
+                    onSubmit(url)
+                } else {
+                    onDismiss()
+                }
+            },
+        ),
+        modifier = modifier
+            .height(52.dp)
+            .clip(PillShape)
+            .background(Color.White.copy(alpha = 0.22f))
+            .border(1.dp, Color.White.copy(alpha = 0.55f), PillShape)
+            .focusRequester(focusRequester),
+        decorationBox = { innerTextField ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = null,
+                    tint = WarmCream.copy(alpha = 0.80f),
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                Box(modifier = Modifier.weight(1f)) {
+                    if (text.isEmpty()) {
+                        Text(
+                            text = "Search or enter URL",
+                            style = TextStyle(
+                                fontFamily = HankenGrotesk,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 15.sp,
+                                color = WarmCream.copy(alpha = 0.50f),
+                            ),
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        },
+    )
 }
 
 // ── HourglassCenter state ─────────────────────────────────────────────────────
