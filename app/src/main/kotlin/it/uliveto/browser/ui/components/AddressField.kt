@@ -216,7 +216,7 @@ private fun GestureFocusedState(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Search,
-                    contentDescription = null,
+                    contentDescription = "Search",
                     tint = WarmCream.copy(alpha = 0.80f),
                     modifier = Modifier.padding(end = 8.dp),
                 )
