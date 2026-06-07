@@ -7,13 +7,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -24,22 +25,18 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
@@ -60,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import it.uliveto.browser.BuildConfig
 import it.uliveto.browser.data.prefs.AppTheme
 import it.uliveto.browser.data.prefs.NavStyle
+import it.uliveto.browser.ui.LocalUlivetoColors
 import it.uliveto.browser.ui.components.EngineLine
 import it.uliveto.browser.ui.tokens.HankenGrotesk
 import it.uliveto.browser.ui.tokens.InstrumentSerif
@@ -87,27 +86,11 @@ fun SettingsScreen(
     val uriHandler = LocalUriHandler.current
     val keyboard = LocalSoftwareKeyboardController.current
 
-    var showCookieDialog by remember { mutableStateOf(false) }
+    val ulivetoColors = LocalUlivetoColors.current
+    val themeGradient = remember(ulivetoColors) { Brush.radialGradient(ulivetoColors.gradientColors) }
+
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showLicensesDialog by remember { mutableStateOf(false) }
-
-    if (showCookieDialog) {
-        AlertDialog(
-            onDismissRequest = { showCookieDialog = false },
-            title = { Text("Cookie Policy", fontFamily = InstrumentSerif, fontSize = 20.sp) },
-            text = {
-                Text(
-                    "Uliveto does not set any first-party cookies. Third-party cookies are subject " +
-                        "to the policies of the websites you visit. Uliveto does not share cookie " +
-                        "data with any analytics or advertising services.",
-                    fontFamily = HankenGrotesk, fontSize = 14.sp,
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showCookieDialog = false }) { Text("OK", fontFamily = HankenGrotesk) }
-            },
-        )
-    }
 
     if (showClearDataDialog) {
         AlertDialog(
@@ -146,199 +129,245 @@ fun SettingsScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Settings", fontFamily = InstrumentSerif, fontSize = 22.sp) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-            )
-        },
-    ) { innerPadding ->
-        LazyColumn(modifier = Modifier.padding(innerPadding)) {
-
-            // ── Personal ──────────────────────────────────────────────────
-            item { SectionHeader("Personal") }
-            item {
-                var nameInput by remember(prefs.userName) { mutableStateOf(prefs.userName) }
-                var editing by remember { mutableStateOf(false) }
-
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    Text("Your name", fontFamily = HankenGrotesk, fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onBackground)
-                    Spacer(Modifier.height(6.dp))
-                    if (editing) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
-                                value = nameInput,
-                                onValueChange = { nameInput = it },
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(onDone = {
-                                    viewModel.setUserName(nameInput.trim())
-                                    keyboard?.hide()
-                                    editing = false
-                                }),
-                                placeholder = { Text("Your name", fontFamily = HankenGrotesk) },
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brush = themeGradient),
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Settings",
+                            fontFamily = InstrumentSerif,
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 20.sp,
+                            color = WarmCream.copy(alpha = 0.92f),
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = WarmCream.copy(alpha = 0.50f),
                             )
-                            Spacer(Modifier.width(8.dp))
-                            TextButton(onClick = {
-                                viewModel.setUserName(nameInput.trim())
-                                keyboard?.hide()
-                                editing = false
-                            }) { Text("Save", fontFamily = HankenGrotesk) }
                         }
-                    } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = if (prefs.userName.isBlank()) "Not set" else prefs.userName,
-                                fontFamily = HankenGrotesk, fontSize = 15.sp,
-                                color = if (prefs.userName.isBlank())
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                                else MaterialTheme.colorScheme.onBackground,
-                            )
-                            TextButton(onClick = { editing = true }) {
-                                Text("Edit", fontFamily = HankenGrotesk)
-                            }
-                        }
-                    }
-                }
-            }
-            item { SectionDivider() }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent,
+                    ),
+                )
+            },
+        ) { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
 
-            // ── Search ────────────────────────────────────────────────────
-            item { SectionHeader("Search") }
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text("Search engine", fontFamily = HankenGrotesk, fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onBackground)
-                    EngineLine(
-                        engine = prefs.searchEngine,
-                        onEngineSelected = { viewModel.setSearchEngine(it) },
-                        customSearchEngineUrl = prefs.customSearchEngineUrl,
-                        onCustomUrlChange = { viewModel.setCustomSearchEngineUrl(it) },
-                    )
-                }
-            }
-            item { SectionDivider() }
+                // ── Personal ──────────────────────────────────────────────────
+                item {
+                    SectionLabel("Personal")
+                    GlassCard {
+                        var nameInput by remember(prefs.userName) { mutableStateOf(prefs.userName) }
+                        var editing by remember { mutableStateOf(false) }
 
-            // ── Navigation ────────────────────────────────────────────────
-            item { SectionHeader("Navigation") }
-            item {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    Text("Navigation style", fontFamily = HankenGrotesk, fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onBackground)
-                    Spacer(Modifier.height(8.dp))
-                    val navOptions = listOf(NavStyle.Hourglass, NavStyle.Classic)
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        navOptions.forEachIndexed { index, style ->
-                            SegmentedButton(
-                                selected = prefs.navStyle == style,
-                                onClick = { viewModel.setNavStyle(style) },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = navOptions.size),
-                            ) {
+                        if (editing) {
+                            Column(modifier = Modifier.padding(14.dp)) {
                                 Text(
-                                    text = if (style == NavStyle.Hourglass) "Bubbles" else "Classic",
-                                    fontFamily = HankenGrotesk, fontSize = 13.sp,
+                                    "Name",
+                                    fontFamily = HankenGrotesk,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp,
+                                    color = WarmCream.copy(alpha = 0.90f),
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    OutlinedTextField(
+                                        value = nameInput,
+                                        onValueChange = { nameInput = it },
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                        keyboardActions = KeyboardActions(onDone = {
+                                            viewModel.setUserName(nameInput.trim())
+                                            keyboard?.hide()
+                                            editing = false
+                                        }),
+                                        placeholder = { Text("Your name", fontFamily = HankenGrotesk) },
+                                    )
+                                    TextButton(onClick = {
+                                        viewModel.setUserName(nameInput.trim())
+                                        keyboard?.hide()
+                                        editing = false
+                                    }) { Text("Save", fontFamily = HankenGrotesk, color = WarmCream) }
+                                }
+                            }
+                        } else {
+                            SettingRow(
+                                label = "Name",
+                                value = if (prefs.userName.isBlank()) "Not set" else prefs.userName,
+                                showArrow = true,
+                                onClick = { editing = true },
+                            )
+                        }
+                    }
+                }
+
+                // ── Search ────────────────────────────────────────────────────
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    SectionLabel("Search")
+                    GlassCard {
+                        // EngineLine owns its tap target and bottom-sheet state.
+                        // Wrap it with SettingRow-equivalent padding so it sits flush in the card.
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            EngineLine(
+                                engine = prefs.searchEngine,
+                                onEngineSelected = { viewModel.setSearchEngine(it) },
+                                customSearchEngineUrl = prefs.customSearchEngineUrl,
+                                onCustomUrlChange = { viewModel.setCustomSearchEngineUrl(it) },
+                            )
+                        }
+                    }
+                }
+
+                // ── Appearance ────────────────────────────────────────────────
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    SectionLabel("Appearance")
+                    GlassCard {
+                        Text(
+                            text = "Theme",
+                            fontFamily = HankenGrotesk,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp,
+                            color = WarmCream.copy(alpha = 0.90f),
+                            modifier = Modifier.padding(start = 14.dp, top = 11.dp, bottom = 8.dp),
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp),
+                        ) {
+                            items(themeSwatches) { (theme, _, swatchColor) ->
+                                ThemeSwatch(
+                                    label = null,
+                                    color = swatchColor,
+                                    selected = prefs.theme == theme,
+                                    onClick = { viewModel.setTheme(theme) },
                                 )
                             }
                         }
+                        Spacer(Modifier.height(8.dp))
+                        RowDivider()
+                        val navLabel = if (prefs.navStyle == NavStyle.Hourglass) "Bubbles" else "Classic"
+                        SettingRow(
+                            label = "Navigation",
+                            value = navLabel,
+                            showArrow = true,
+                            onClick = {
+                                val next = if (prefs.navStyle == NavStyle.Hourglass) NavStyle.Classic else NavStyle.Hourglass
+                                viewModel.setNavStyle(next)
+                            },
+                        )
                     }
                 }
-            }
-            item { SectionDivider() }
 
-            // ── Appearance ────────────────────────────────────────────────
-            item { SectionHeader("Appearance") }
-            item {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    Text("Theme", fontFamily = HankenGrotesk, fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onBackground)
-                    Spacer(Modifier.height(12.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        items(themeSwatches) { (theme, label, swatchColor) ->
-                            ThemeSwatch(
-                                label = label,
-                                color = swatchColor,
-                                selected = prefs.theme == theme,
-                                onClick = { viewModel.setTheme(theme) },
+                // ── Privacy ───────────────────────────────────────────────────
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    SectionLabel("Privacy")
+                    GlassCard {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Safe Browsing",
+                                    fontFamily = HankenGrotesk,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp,
+                                    color = WarmCream.copy(alpha = 0.90f),
+                                )
+                                Spacer(Modifier.height(1.dp))
+                                Text(
+                                    "Sends URLs to Google",
+                                    fontFamily = HankenGrotesk,
+                                    fontSize = 9.sp,
+                                    color = WarmCream.copy(alpha = 0.40f),
+                                )
+                            }
+                            Switch(
+                                checked = prefs.safeBrowsingEnabled,
+                                onCheckedChange = { viewModel.setSafeBrowsing(it) },
                             )
                         }
+                        RowDivider()
+                        SettingRow(
+                            label = "Privacy Receipts",
+                            subtitle = "Verified network capture per release",
+                            showArrow = true,
+                            onClick = onNavigateToPrivacyReceipts,
+                        )
+                        RowDivider()
+                        SettingRow(
+                            label = "Clear browsing data",
+                            showArrow = false,
+                            trailing = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    tint = Color(0xFFB25737).copy(alpha = 0.55f),
+                                    modifier = Modifier
+                                        .padding(start = 4.dp)
+                                        .size(14.dp),
+                                )
+                            },
+                            onClick = { showClearDataDialog = true },
+                        )
                     }
                 }
-            }
-            item { SectionDivider() }
 
-            // ── Privacy ───────────────────────────────────────────────────
-            item { SectionHeader("Privacy") }
-            item {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    Text(
-                        "Uliveto collects no telemetry. The CI job that proves this publishes a " +
-                            "network capture for every release.",
-                        fontFamily = HankenGrotesk, fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
-                        lineHeight = 20.sp,
-                    )
-                }
-            }
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Safe Browsing", fontFamily = HankenGrotesk, fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.onBackground)
-                        Text("Safe Browsing sends URLs to Google's servers.", fontFamily = HankenGrotesk,
-                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
-                            lineHeight = 17.sp)
+                // ── About ─────────────────────────────────────────────────────
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    SectionLabel("About")
+                    GlassCard {
+                        SettingRow(
+                            label = "Version",
+                            value = BuildConfig.VERSION_NAME,
+                        )
+                        RowDivider()
+                        SettingRow(
+                            label = "Open source",
+                            value = "GitHub",
+                            showArrow = true,
+                            onClick = { uriHandler.openUri("https://github.com/prollyyes/uliveto") },
+                        )
+                        RowDivider()
+                        SettingRow(
+                            label = "Licenses",
+                            showArrow = true,
+                            onClick = { showLicensesDialog = true },
+                        )
                     }
-                    Switch(checked = prefs.safeBrowsingEnabled, onCheckedChange = { viewModel.setSafeBrowsing(it) })
+                    Spacer(Modifier.height(24.dp))
                 }
             }
-            item { ClickableRow("Cookie policy") { showCookieDialog = true } }
-            item { ClickableRow("Clear browsing data") { showClearDataDialog = true } }
-            item { ClickableRow("Privacy Receipts", onClick = onNavigateToPrivacyReceipts) }
-            item { SectionDivider() }
-
-            // ── About ─────────────────────────────────────────────────────
-            item { SectionHeader("About") }
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Version", fontFamily = HankenGrotesk, fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onBackground)
-                    Text(BuildConfig.VERSION_NAME, fontFamily = HankenGrotesk, fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
-                }
-            }
-            item { ClickableRow("Open source licenses") { showLicensesDialog = true } }
-            item { ClickableRow("Source code") { uriHandler.openUri("https://github.com/prollyyes/uliveto") } }
-            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
 
 @Composable
 private fun ThemeSwatch(
-    label: String,
+    label: String?,
     color: Color,
     selected: Boolean,
     onClick: () -> Unit,
@@ -346,48 +375,28 @@ private fun ThemeSwatch(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(22.dp)
                 .clip(CircleShape)
                 .background(color)
                 .border(
-                    width = if (selected) 3.dp else 1.dp,
-                    color = if (selected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f),
+                    width = if (selected) 2.dp else 1.dp,
+                    color = if (selected) WarmCream.copy(alpha = 0.85f)
+                            else WarmCream.copy(alpha = 0.15f),
                     shape = CircleShape,
                 )
                 .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (selected) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = label,
-            fontFamily = HankenGrotesk,
-            fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = if (selected) 1f else 0.75f),
         )
+        if (label != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = label,
+                fontFamily = HankenGrotesk,
+                fontSize = 11.sp,
+                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                color = WarmCream.copy(alpha = if (selected) 1f else 0.75f),
+            )
+        }
     }
-}
-
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        fontFamily = InstrumentSerif,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Normal,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-    )
 }
 
 @Composable
@@ -494,35 +503,4 @@ private fun RowDivider() {
         thickness = 0.5.dp,
         color = WarmCream.copy(alpha = 0.07f),
     )
-}
-
-@Composable
-private fun SectionDivider() {
-    HorizontalDivider(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        thickness = 0.5.dp,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
-    )
-    Spacer(Modifier.height(4.dp))
-}
-
-@Composable
-private fun ClickableRow(label: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, fontFamily = HankenGrotesk, fontSize = 15.sp,
-            color = MaterialTheme.colorScheme.onBackground)
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
-            modifier = Modifier.padding(start = 8.dp),
-        )
-    }
 }
