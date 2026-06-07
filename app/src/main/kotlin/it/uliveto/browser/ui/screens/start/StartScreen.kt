@@ -1,5 +1,6 @@
 package it.uliveto.browser.ui.screens.start
 
+import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
@@ -11,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +48,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -204,6 +207,91 @@ fun StartScreen(
                     drawContent()
                     drawImage(grainBitmap)
                 }
+            }
+            .pointerInput(gestureState) {
+                if (gestureState != GestureState.Rest) return@pointerInput
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+
+                    val bottomNavZonePx = with(density) { 80.dp.toPx() }
+                    if (down.position.y > size.height - bottomNavZonePx) return@awaitEachGesture
+
+                    var dragCommitted = false
+                    var firstHapticFired = false
+                    var thresholdHapticFired = false
+                    val velocityTracker = VelocityTracker()
+                    velocityTracker.addPosition(down.uptimeMillis, down.position)
+                    var accumulatedY = 0f
+                    val touchSlop = viewConfiguration.touchSlop
+
+                    do {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        if (change.isConsumed) break
+
+                        val dy = change.positionChange().y
+                        val dx = change.positionChange().x
+
+                        if (!dragCommitted && abs(accumulatedY + dy) > touchSlop) {
+                            if (abs(dy) > abs(dx) * 1.5f) {
+                                dragCommitted = true
+                            } else {
+                                break
+                            }
+                        }
+
+                        if (dragCommitted) {
+                            change.consume()
+                            accumulatedY = (accumulatedY + dy).coerceAtLeast(0f)
+                            velocityTracker.addPosition(change.uptimeMillis, change.position)
+
+                            if (!firstHapticFired) {
+                                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                firstHapticFired = true
+                                gestureState = GestureState.Dragging
+                            }
+
+                            scope.launch { dragOffsetY.snapTo(accumulatedY) }
+
+                            if (!thresholdHapticFired && accumulatedY >= thresholdPx) {
+                                view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                                thresholdHapticFired = true
+                            }
+                        }
+                    } while (event.changes.any { it.pressed })
+
+                    if (dragCommitted) {
+                        val velocityY = velocityTracker.calculateVelocity().y
+                        if (shouldCommitGesture(accumulatedY, velocityY, thresholdPx)) {
+                            gestureState = GestureState.Committed
+                            scope.launch {
+                                dragOffsetY.animateTo(
+                                    targetValue = targetCommitOffsetPx,
+                                    animationSpec = spring(
+                                        dampingRatio = 0.50f,
+                                        stiffness = 280f,
+                                        visibilityThreshold = 0.5f,
+                                    ),
+                                    initialVelocity = velocityY,
+                                )
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_RELEASE)
+                            }
+                        } else {
+                            scope.launch {
+                                dragOffsetY.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = spring(
+                                        dampingRatio = 0.72f,
+                                        stiffness = 480f,
+                                        visibilityThreshold = 0.5f,
+                                    ),
+                                    initialVelocity = velocityY,
+                                )
+                                gestureState = GestureState.Rest
+                            }
+                        }
+                    }
+                }
             },
     ) {
         Column(
@@ -256,6 +344,33 @@ fun StartScreen(
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(bottom = 16.dp),
+            )
+        }
+
+        // Blur / dim overlay — between background content and floating pill
+        if (blurAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .run {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            blur(16.dp)
+                        } else this
+                    }
+                    .background(Color.Black.copy(alpha = 0.40f * blurAlpha))
+                    .clickable(
+                        enabled = gestureState == GestureState.Committed,
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) {
+                        gestureState = GestureState.Rest
+                        scope.launch {
+                            dragOffsetY.animateTo(
+                                targetValue = 0f,
+                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 480f),
+                            )
+                        }
+                    },
             )
         }
 
