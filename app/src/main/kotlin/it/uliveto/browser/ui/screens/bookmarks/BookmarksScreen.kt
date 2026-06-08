@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -147,11 +148,9 @@ fun BookmarksScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(bookmarks, key = { it.id }) { bookmark ->
-                        val index = bookmarks.indexOf(bookmark)
-
+                    itemsIndexed(bookmarks, key = { _, b -> b.id }) { index, bookmark ->
                         var visible by remember { mutableStateOf(false) }
-                        LaunchedEffect(Unit) {
+                        LaunchedEffect(bookmark.id) {
                             delay(index.coerceAtMost(8) * 25L)
                             visible = true
                         }
