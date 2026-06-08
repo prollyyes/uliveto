@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -150,11 +151,9 @@ fun TabsScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(tabs, key = { it.id }) { tab ->
-                        val index = tabs.indexOf(tab)
-
+                    itemsIndexed(tabs, key = { _, tab -> tab.id }) { index, tab ->
                         var visible by remember { mutableStateOf(false) }
-                        LaunchedEffect(Unit) {
+                        LaunchedEffect(tab.id) {
                             delay(index.coerceAtMost(5) * 30L)
                             visible = true
                         }
