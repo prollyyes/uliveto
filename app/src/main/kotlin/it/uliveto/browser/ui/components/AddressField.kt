@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -80,10 +82,10 @@ fun AddressField(
     AnimatedContent(
         targetState = state,
         transitionSpec = {
-            val enterSpec = tween<Float>(durationMillis = 280, easing = FastOutSlowInEasing)
-            val exitSpec = tween<Float>(durationMillis = 280, easing = FastOutSlowInEasing)
-            (fadeIn(enterSpec) + scaleIn(enterSpec, initialScale = 0.96f))
-                .togetherWith(fadeOut(exitSpec) + scaleOut(exitSpec, targetScale = 0.96f))
+            val fadeSpec = tween<Float>(durationMillis = 240, easing = FastOutSlowInEasing)
+            val scaleSpec = spring<Float>(dampingRatio = 0.7f, stiffness = 400f)
+            (fadeIn(fadeSpec) + scaleIn(scaleSpec, initialScale = 0.96f))
+                .togetherWith(fadeOut(fadeSpec) + scaleOut(scaleSpec, targetScale = 0.96f))
                 .using(SizeTransform(clip = false))
         },
         label = "address_field_state",
@@ -291,12 +293,20 @@ private fun ExpandedState(
         focusRequester.requestFocus()
     }
 
+    var scrimVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { scrimVisible = true }
+    val scrimAlpha by animateFloatAsState(
+        targetValue = if (scrimVisible) 0.45f else 0f,
+        animationSpec = tween(280),
+        label = "scrimAlpha",
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Scrim — tapping outside the text field dismisses
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.45f))
+                .background(Color.Black.copy(alpha = scrimAlpha))
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
