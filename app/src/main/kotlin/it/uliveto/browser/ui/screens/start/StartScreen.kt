@@ -3,16 +3,20 @@ package it.uliveto.browser.ui.screens.start
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -180,6 +185,8 @@ fun StartScreen(
     // New random greeting every time the Homepage is visited
     val greetingWord = remember { mediterraneanGreetings.random() }
     val greeting = if (prefs.userName.isBlank()) greetingWord else "$greetingWord, ${prefs.userName}"
+    var greetingVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { greetingVisible = true }
 
     Box(
         modifier = modifier
@@ -312,16 +319,22 @@ fun StartScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = greeting,
-                style = TextStyle(
-                    fontFamily = InstrumentSerif,
-                    fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 32.sp,
-                    color = WarmCream,
-                ),
-            )
+            AnimatedVisibility(
+                visible = greetingVisible,
+                enter = fadeIn(animationSpec = tween(400)) +
+                        slideInVertically(animationSpec = tween(400, easing = FastOutSlowInEasing)) { -12 },
+            ) {
+                Text(
+                    text = greeting,
+                    style = TextStyle(
+                        fontFamily = InstrumentSerif,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 32.sp,
+                        color = WarmCream,
+                    ),
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -471,9 +484,22 @@ private fun NavBarItem(
     modifier: Modifier = Modifier,
     active: Boolean = false,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 600f),
+        label = "navItemScale",
+    )
+
     Column(
         modifier = modifier
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            )
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
