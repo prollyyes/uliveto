@@ -1,7 +1,12 @@
 package it.uliveto.browser.ui.screens.bookmarks
 
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,8 +34,12 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -44,6 +53,7 @@ import it.uliveto.browser.ui.LocalUlivetoColors
 import it.uliveto.browser.ui.tokens.HankenGrotesk
 import it.uliveto.browser.ui.tokens.InstrumentSerif
 import it.uliveto.browser.ui.tokens.WarmCream
+import kotlinx.coroutines.delay
 
 private val BookmarkCardShape = RoundedCornerShape(20.dp)
 
@@ -138,11 +148,25 @@ fun BookmarksScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(bookmarks, key = { it.id }) { bookmark ->
-                        BookmarkCard(
-                            bookmark = bookmark,
-                            onTap = { onOpenUrl(bookmark.url) },
-                            onDelete = { viewModel.delete(bookmark) },
-                        )
+                        val index = bookmarks.indexOf(bookmark)
+
+                        var visible by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            delay(index.coerceAtMost(8) * 25L)
+                            visible = true
+                        }
+
+                        AnimatedVisibility(
+                            visible = visible,
+                            enter = fadeIn(tween(200)) +
+                                    slideInVertically(tween(200, easing = FastOutSlowInEasing)) { it / 4 },
+                        ) {
+                            BookmarkCard(
+                                bookmark = bookmark,
+                                onTap = { onOpenUrl(bookmark.url) },
+                                onDelete = { viewModel.delete(bookmark) },
+                            )
+                        }
                     }
                     item { Spacer(Modifier.height(16.dp)) }
                 }
