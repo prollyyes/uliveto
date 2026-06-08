@@ -215,9 +215,15 @@ fun StartScreen(
                     drawImage(grainBitmap)
                 }
             }
-            .pointerInput(gestureState) {
-                if (gestureState != GestureState.Rest) return@pointerInput
+            .pointerInput(Unit) {
                 awaitEachGesture {
+                    if (gestureState != GestureState.Rest) {
+                        awaitFirstDown(requireUnconsumed = false)
+                        do {
+                            val e = awaitPointerEvent()
+                        } while (e.changes.any { it.pressed })
+                        return@awaitEachGesture
+                    }
                     val down = awaitFirstDown(requireUnconsumed = false)
 
                     val bottomNavZonePx = with(density) { 80.dp.toPx() }
