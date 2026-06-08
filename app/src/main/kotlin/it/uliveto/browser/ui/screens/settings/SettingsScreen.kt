@@ -1,5 +1,9 @@
 package it.uliveto.browser.ui.screens.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +42,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,6 +68,7 @@ import it.uliveto.browser.ui.components.EngineLine
 import it.uliveto.browser.ui.tokens.HankenGrotesk
 import it.uliveto.browser.ui.tokens.InstrumentSerif
 import it.uliveto.browser.ui.tokens.WarmCream
+import kotlinx.coroutines.delay
 
 // (theme, display label, swatch color)
 private val themeSwatches = listOf(
@@ -171,194 +177,259 @@ fun SettingsScreen(
 
                 // ── Personal ──────────────────────────────────────────────────
                 item {
-                    SectionLabel("Personal")
-                    GlassCard {
-                        var nameInput by remember(prefs.userName) { mutableStateOf(prefs.userName) }
-                        var editing by remember { mutableStateOf(false) }
+                    var visible by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        delay(0L)
+                        visible = true
+                    }
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(tween(200)) +
+                                slideInVertically(tween(200)) { -8 },
+                    ) {
+                        Column {
+                            SectionLabel("Personal")
+                            GlassCard {
+                                var nameInput by remember(prefs.userName) { mutableStateOf(prefs.userName) }
+                                var editing by remember { mutableStateOf(false) }
 
-                        if (editing) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Text(
-                                    "Name",
-                                    fontFamily = HankenGrotesk,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 13.sp,
-                                    color = WarmCream.copy(alpha = 0.90f),
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    OutlinedTextField(
-                                        value = nameInput,
-                                        onValueChange = { nameInput = it },
-                                        singleLine = true,
-                                        modifier = Modifier.weight(1f),
-                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                        keyboardActions = KeyboardActions(onDone = {
-                                            viewModel.setUserName(nameInput.trim())
-                                            keyboard?.hide()
-                                            editing = false
-                                        }),
-                                        placeholder = { Text("Your name", fontFamily = HankenGrotesk) },
+                                if (editing) {
+                                    Column(modifier = Modifier.padding(14.dp)) {
+                                        Text(
+                                            "Name",
+                                            fontFamily = HankenGrotesk,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 13.sp,
+                                            color = WarmCream.copy(alpha = 0.90f),
+                                        )
+                                        Spacer(Modifier.height(6.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            OutlinedTextField(
+                                                value = nameInput,
+                                                onValueChange = { nameInput = it },
+                                                singleLine = true,
+                                                modifier = Modifier.weight(1f),
+                                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                                keyboardActions = KeyboardActions(onDone = {
+                                                    viewModel.setUserName(nameInput.trim())
+                                                    keyboard?.hide()
+                                                    editing = false
+                                                }),
+                                                placeholder = { Text("Your name", fontFamily = HankenGrotesk) },
+                                            )
+                                            TextButton(onClick = {
+                                                viewModel.setUserName(nameInput.trim())
+                                                keyboard?.hide()
+                                                editing = false
+                                            }) { Text("Save", fontFamily = HankenGrotesk, color = WarmCream) }
+                                        }
+                                    }
+                                } else {
+                                    SettingRow(
+                                        label = "Name",
+                                        value = if (prefs.userName.isBlank()) "Not set" else prefs.userName,
+                                        showArrow = true,
+                                        onClick = { editing = true },
                                     )
-                                    TextButton(onClick = {
-                                        viewModel.setUserName(nameInput.trim())
-                                        keyboard?.hide()
-                                        editing = false
-                                    }) { Text("Save", fontFamily = HankenGrotesk, color = WarmCream) }
                                 }
                             }
-                        } else {
-                            SettingRow(
-                                label = "Name",
-                                value = if (prefs.userName.isBlank()) "Not set" else prefs.userName,
-                                showArrow = true,
-                                onClick = { editing = true },
-                            )
                         }
                     }
                 }
 
                 // ── Search ────────────────────────────────────────────────────
                 item {
-                    Spacer(Modifier.height(8.dp))
-                    SectionLabel("Search")
-                    GlassCard {
-                        // EngineLine owns its tap target and bottom-sheet state.
-                        // Wrap it with SettingRow-equivalent padding so it sits flush in the card.
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            EngineLine(
-                                engine = prefs.searchEngine,
-                                onEngineSelected = { viewModel.setSearchEngine(it) },
-                                customSearchEngineUrl = prefs.customSearchEngineUrl,
-                                onCustomUrlChange = { viewModel.setCustomSearchEngineUrl(it) },
-                            )
+                    var visible by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        delay(20L)
+                        visible = true
+                    }
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(tween(200)) +
+                                slideInVertically(tween(200)) { -8 },
+                    ) {
+                        Column {
+                            Spacer(Modifier.height(8.dp))
+                            SectionLabel("Search")
+                            GlassCard {
+                                // EngineLine owns its tap target and bottom-sheet state.
+                                // Wrap it with SettingRow-equivalent padding so it sits flush in the card.
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    EngineLine(
+                                        engine = prefs.searchEngine,
+                                        onEngineSelected = { viewModel.setSearchEngine(it) },
+                                        customSearchEngineUrl = prefs.customSearchEngineUrl,
+                                        onCustomUrlChange = { viewModel.setCustomSearchEngineUrl(it) },
+                                    )
+                                }
+                            }
                         }
                     }
                 }
 
                 // ── Appearance ────────────────────────────────────────────────
                 item {
-                    Spacer(Modifier.height(8.dp))
-                    SectionLabel("Appearance")
-                    GlassCard {
-                        Text(
-                            text = "Theme",
-                            fontFamily = HankenGrotesk,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 13.sp,
-                            color = WarmCream.copy(alpha = 0.90f),
-                            modifier = Modifier.padding(start = 14.dp, top = 11.dp, bottom = 8.dp),
-                        )
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp),
-                        ) {
-                            items(themeSwatches) { (theme, _, swatchColor) ->
-                                ThemeSwatch(
-                                    label = null,
-                                    color = swatchColor,
-                                    selected = prefs.theme == theme,
-                                    onClick = { viewModel.setTheme(theme) },
+                    var visible by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        delay(40L)
+                        visible = true
+                    }
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(tween(200)) +
+                                slideInVertically(tween(200)) { -8 },
+                    ) {
+                        Column {
+                            Spacer(Modifier.height(8.dp))
+                            SectionLabel("Appearance")
+                            GlassCard {
+                                Text(
+                                    text = "Theme",
+                                    fontFamily = HankenGrotesk,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp,
+                                    color = WarmCream.copy(alpha = 0.90f),
+                                    modifier = Modifier.padding(start = 14.dp, top = 11.dp, bottom = 8.dp),
+                                )
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 14.dp),
+                                ) {
+                                    items(themeSwatches) { (theme, _, swatchColor) ->
+                                        ThemeSwatch(
+                                            label = null,
+                                            color = swatchColor,
+                                            selected = prefs.theme == theme,
+                                            onClick = { viewModel.setTheme(theme) },
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                RowDivider()
+                                val navLabel = if (prefs.navStyle == NavStyle.Hourglass) "Bubbles" else "Classic"
+                                SettingRow(
+                                    label = "Navigation",
+                                    value = navLabel,
+                                    showArrow = true,
+                                    onClick = {
+                                        val next = if (prefs.navStyle == NavStyle.Hourglass) NavStyle.Classic else NavStyle.Hourglass
+                                        viewModel.setNavStyle(next)
+                                    },
                                 )
                             }
                         }
-                        Spacer(Modifier.height(8.dp))
-                        RowDivider()
-                        val navLabel = if (prefs.navStyle == NavStyle.Hourglass) "Bubbles" else "Classic"
-                        SettingRow(
-                            label = "Navigation",
-                            value = navLabel,
-                            showArrow = true,
-                            onClick = {
-                                val next = if (prefs.navStyle == NavStyle.Hourglass) NavStyle.Classic else NavStyle.Hourglass
-                                viewModel.setNavStyle(next)
-                            },
-                        )
                     }
                 }
 
                 // ── Privacy ───────────────────────────────────────────────────
                 item {
-                    Spacer(Modifier.height(8.dp))
-                    SectionLabel("Privacy")
-                    GlassCard {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 11.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "Safe Browsing",
-                                    fontFamily = HankenGrotesk,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 13.sp,
-                                    color = WarmCream.copy(alpha = 0.90f),
+                    var visible by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        delay(60L)
+                        visible = true
+                    }
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(tween(200)) +
+                                slideInVertically(tween(200)) { -8 },
+                    ) {
+                        Column {
+                            Spacer(Modifier.height(8.dp))
+                            SectionLabel("Privacy")
+                            GlassCard {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 11.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "Safe Browsing",
+                                            fontFamily = HankenGrotesk,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 13.sp,
+                                            color = WarmCream.copy(alpha = 0.90f),
+                                        )
+                                        Spacer(Modifier.height(1.dp))
+                                        Text(
+                                            "Sends URLs to Google",
+                                            fontFamily = HankenGrotesk,
+                                            fontSize = 9.sp,
+                                            color = WarmCream.copy(alpha = 0.40f),
+                                        )
+                                    }
+                                    Switch(
+                                        checked = prefs.safeBrowsingEnabled,
+                                        onCheckedChange = { viewModel.setSafeBrowsing(it) },
+                                    )
+                                }
+                                RowDivider()
+                                SettingRow(
+                                    label = "Privacy Receipts",
+                                    subtitle = "Verified network capture per release",
+                                    showArrow = true,
+                                    onClick = onNavigateToPrivacyReceipts,
                                 )
-                                Spacer(Modifier.height(1.dp))
-                                Text(
-                                    "Sends URLs to Google",
-                                    fontFamily = HankenGrotesk,
-                                    fontSize = 9.sp,
-                                    color = WarmCream.copy(alpha = 0.40f),
+                                RowDivider()
+                                SettingRow(
+                                    label = "Clear browsing data",
+                                    showArrow = false,
+                                    trailing = {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                            contentDescription = null,
+                                            tint = Color(0xFFB25737).copy(alpha = 0.55f),
+                                            modifier = Modifier
+                                                .padding(start = 4.dp)
+                                                .size(14.dp),
+                                        )
+                                    },
+                                    onClick = { showClearDataDialog = true },
                                 )
                             }
-                            Switch(
-                                checked = prefs.safeBrowsingEnabled,
-                                onCheckedChange = { viewModel.setSafeBrowsing(it) },
-                            )
                         }
-                        RowDivider()
-                        SettingRow(
-                            label = "Privacy Receipts",
-                            subtitle = "Verified network capture per release",
-                            showArrow = true,
-                            onClick = onNavigateToPrivacyReceipts,
-                        )
-                        RowDivider()
-                        SettingRow(
-                            label = "Clear browsing data",
-                            showArrow = false,
-                            trailing = {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = null,
-                                    tint = Color(0xFFB25737).copy(alpha = 0.55f),
-                                    modifier = Modifier
-                                        .padding(start = 4.dp)
-                                        .size(14.dp),
-                                )
-                            },
-                            onClick = { showClearDataDialog = true },
-                        )
                     }
                 }
 
                 // ── About ─────────────────────────────────────────────────────
                 item {
-                    Spacer(Modifier.height(8.dp))
-                    SectionLabel("About")
-                    GlassCard {
-                        SettingRow(
-                            label = "Version",
-                            value = BuildConfig.VERSION_NAME,
-                        )
-                        RowDivider()
-                        SettingRow(
-                            label = "Open source",
-                            value = "GitHub",
-                            showArrow = true,
-                            onClick = { uriHandler.openUri("https://github.com/prollyyes/uliveto") },
-                        )
-                        RowDivider()
-                        SettingRow(
-                            label = "Licenses",
-                            showArrow = true,
-                            onClick = { showLicensesDialog = true },
-                        )
+                    var visible by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        delay(80L)
+                        visible = true
                     }
-                    Spacer(Modifier.height(24.dp))
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(tween(200)) +
+                                slideInVertically(tween(200)) { -8 },
+                    ) {
+                        Column {
+                            Spacer(Modifier.height(8.dp))
+                            SectionLabel("About")
+                            GlassCard {
+                                SettingRow(
+                                    label = "Version",
+                                    value = BuildConfig.VERSION_NAME,
+                                )
+                                RowDivider()
+                                SettingRow(
+                                    label = "Open source",
+                                    value = "GitHub",
+                                    showArrow = true,
+                                    onClick = { uriHandler.openUri("https://github.com/prollyyes/uliveto") },
+                                )
+                                RowDivider()
+                                SettingRow(
+                                    label = "Licenses",
+                                    showArrow = true,
+                                    onClick = { showLicensesDialog = true },
+                                )
+                            }
+                            Spacer(Modifier.height(24.dp))
+                        }
+                    }
                 }
             }
         }
